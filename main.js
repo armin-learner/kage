@@ -148,7 +148,8 @@ loadSprite("waterAnim", "assets/level3/water/water_anim.png", {
 });
 
 // Frog player — combined spritesheet (8x5 grid, 39 valid frames of 128x128)
-// Tongue tip frames composited with body frames. Zero sprite-swapping.
+// Tongue/spit frames in the generated sheet are visually broken (artifacts),
+// so we point those anims at the clean idle frames to remove the tongue glitch.
 loadSprite("frogPlayer", "assets/level3/frog/frogger_combined.png", {
   sliceX: 8,
   sliceY: 5,
@@ -156,8 +157,8 @@ loadSprite("frogPlayer", "assets/level3/frog/frogger_combined.png", {
     idle:   { from: 0,  to: 4,  loop: true,  speed: 8  },
     move:   { from: 5,  to: 12, loop: true,  speed: 12 },
     hurt:   { from: 13, to: 16, loop: false, speed: 10 },
-    spit:   { from: 17, to: 30, loop: false, speed: 18 },
-    tongue: { from: 31, to: 38, loop: false, speed: 14 },
+    spit:   { from: 0,  to: 4,  loop: false, speed: 8  },
+    tongue: { from: 0,  to: 4,  loop: false, speed: 8  },
   },
 });
 
@@ -170,9 +171,14 @@ loadSprite("chestEmpty", "assets/level3/coffre_sansclé.png", {
     open:   { from: 0, to: 1, loop: false, speed: 3 },
   },
 });
-// Key chest — separate images to avoid sliceX rendering issues
-loadSprite("chestKeyClosed", "assets/level3/coffre_cle_closed.png");
-loadSprite("chestKeyOpen", "assets/level3/coffre_cle_open.png");
+// Key chest — 4-frame spritesheet (closed → opening → open with key)
+loadSprite("chestKey", "assets/level3/chest.png", {
+  sliceX: 4,
+  anims: {
+    closed: { from: 0, to: 0, loop: false, speed: 1 },
+    open:   { from: 0, to: 3, loop: false, speed: 8 },
+  },
+});
 
 // Level 3 frog NPC
 loadSprite("frogNPC", "assets/level3/frog/frogB_sheet.png", {
@@ -603,73 +609,73 @@ scene("menu", () => {
   // Button PLAY
   const playBtn = add([
     rect(220, 50),
-    pos(center().x, center().y - 20),
+    pos(center().x, center().y + 30),
     area(),
-    color(100, 150, 255),
+    color(70, 95, 80),
     anchor("center"),
     fixed(), z(5),
   ]);
   add([
     text("JOUER", { size: 20 }),
-    pos(center().x, center().y - 20),
+    pos(center().x, center().y + 30),
     anchor("center"),
-    color(255, 255, 255),
+    color(230, 220, 190),
     fixed(), z(6),
   ]);
 
   // Button SELECT LEVEL
   const selectBtn = add([
     rect(220, 44),
-    pos(center().x, center().y + 50),
+    pos(center().x, center().y + 95),
     area(),
-    color(150, 255, 150),
+    color(85, 110, 95),
     anchor("center"),
     fixed(), z(5),
   ]);
   add([
     text("SELECT LEVEL", { size: 16 }),
-    pos(center().x, center().y + 50),
+    pos(center().x, center().y + 95),
     anchor("center"),
-    color(0, 0, 0),
+    color(230, 220, 190),
     fixed(), z(6),
   ]);
 
   // Button CREDITS
   const creditsBtn = add([
     rect(160, 40),
-    pos(center().x, center().y + 110),
+    pos(center().x, center().y + 155),
     area(),
-    color(255, 200, 100),
+    color(110, 90, 70),
     anchor("center"),
     fixed(), z(5),
   ]);
   add([
     text("CREDITS", { size: 16 }),
-    pos(center().x, center().y + 110),
+    pos(center().x, center().y + 155),
     anchor("center"),
-    color(0, 0, 0),
+    color(230, 220, 190),
     fixed(), z(6),
   ]);
 
   const volLabel = add([
     text(`Volume: ${Math.round(gameState.volume * 100)}%`, { size: 14 }),
-    pos(center().x, center().y + 170),
+    pos(center().x, center().y + 210),
     anchor("center"), color(200, 200, 200), fixed(), z(6),
   ]);
 
   const volDown = add([
-    rect(36, 30), pos(center().x - 80, center().y + 205),
-    area(), color(180, 80, 80), anchor("center"), fixed(), z(5),
+    rect(36, 30), pos(center().x - 80, center().y + 245),
+    area(), color(110, 80, 70), anchor("center"), fixed(), z(5),
   ]);
-  add([text("−", { size: 20 }), pos(center().x - 80, center().y + 205),
-    anchor("center"), color(255, 255, 255), fixed(), z(6)]);
+  add([text("−", { size: 20 }), pos(center().x - 80, center().y + 245),
+    anchor("center"), color(230, 220, 190), fixed(), z(6)]);
 
   const volUp = add([
-    rect(36, 30), pos(center().x + 80, center().y + 205),
-    area(), color(80, 180, 80), anchor("center"), fixed(), z(5),
+    rect(36, 30), pos(center().x + 80, center().y + 245),
+    area(), color(80, 110, 90), anchor("center"), fixed(), z(5),
   ]);
-  add([text("+", { size: 20 }), pos(center().x + 80, center().y + 205),
-    anchor("center"), color(255, 255, 255), fixed(), z(6)]);
+  add([text("+", { size: 20 }), pos(center().x + 80, center().y + 245),
+    anchor("center"), color(230, 220, 190), fixed(), z(6)]);
 
   volDown.onClick(() => {
     gameState.volume = Math.max(0, gameState.volume - 0.1);
@@ -1325,10 +1331,14 @@ scene("level1", () => {
   let batMet = false;
   let batAnim = null;
 
-  // Camera follows player
+  // Camera follows player (clamped to level bounds so we never see past the world)
   onUpdate(() => {
     const curr = camPos();
-    camPos(lerp(curr.x, player.pos.x + (canFly && !hasLanded ? 80 : 0), 0.1), height() / 2);
+    const halfW = width() / 2;
+    const targetX = player.pos.x + (canFly && !hasLanded ? 80 : 0);
+    const minX = halfW;
+    const maxX = Math.max(halfW, WORLD_W - halfW);
+    camPos(lerp(curr.x, clamp(targetX, minX, maxX), 0.1), height() / 2);
   });
 
   onUpdate(() => {
@@ -1830,7 +1840,7 @@ scene("level2", () => {
 
   const beetleNPC = add([
     sprite("beetle", { anim: "idle" }),
-    pos(300, 368),
+    pos(300, 384),
     area(), anchor("bot"),
     scale(3.5),
     "beetle-npc", z(15),
@@ -2504,7 +2514,7 @@ scene("level3", () => {
   const player = add([
     sprite("goblin", { anim: "idle" }),
     pos(50, 210),
-    area({ shape: new Rect(vec2(0), 32, 42) }),
+    area({ shape: new Rect(vec2(0, 8), 32, 48) }),
     body(), anchor("center"), scale(2.0), z(20),
     {
       speed: 260, canFrog: false,
@@ -2666,7 +2676,7 @@ scene("level3", () => {
         player.play("idle");
         player.frogAnim = "idle";
       }
-      if (d < 0) player.flipX = true; else if (d > 0) player.flipX = false;
+      if (d < 0) player.flipX = false; else if (d > 0) player.flipX = true;
     } else if (!player.canFrog && !player.isHurt) {
       let wa = "idle";
       if (!player.isGrounded()) wa = "walk"; else if (d !== 0) wa = "walk";
@@ -2800,10 +2810,10 @@ scene("level3", () => {
   const CHEST_Y = 82.4;     // top of platform
 
   const chestSprite = add([
-    sprite("chestKeyClosed"),
+    sprite("chestKey", { anim: "closed" }),
     pos(CHEST_X, CHEST_Y),
     anchor("bot"),
-    scale(2.0),
+    scale(1.4),
     z(29),
     area({ shape: new Rect(vec2(-18, -20), 36, 20) }),
     "chest",
@@ -2828,9 +2838,8 @@ scene("level3", () => {
     chestSprite.opened = true;
     gameState.hasSwampKey = true;
 
-    // Swap to open chest sprite (separate images avoid sliceX issues)
-    chestSprite.unuse("sprite");
-    chestSprite.use(sprite("chestKeyOpen"));
+    // Play open animation on the spritesheet
+    chestSprite.play("open");
 
     // hide "?" label
     destroy(chestLabel);
@@ -3058,54 +3067,54 @@ scene("end", () => {
   // REPLAY
   const replayBtn = add([
     rect(160, 40),
-    pos(center().x - 120, center().y + 90),
+    pos(center().x - 120, center().y + 160),
     area(),
-    color(100, 200, 100),
+    color(70, 110, 95),
     anchor("center"),
     fixed(),
   ]);
 
   add([
     text("REPLAY", { size: 16 }),
-    pos(center().x - 120, center().y + 90),
+    pos(center().x - 120, center().y + 160),
     anchor("center"),
-    color(0, 0, 0),
+    color(220, 230, 220),
     fixed(),
   ]);
 
   // CREDITS
   const creditsBtn = add([
     rect(160, 40),
-    pos(center().x, center().y + 90),
+    pos(center().x, center().y + 160),
     area(),
-    color(100, 150, 255),
+    color(60, 90, 110),
     anchor("center"),
     fixed(),
   ]);
 
   add([
     text("CREDITS", { size: 16 }),
-    pos(center().x, center().y + 90),
+    pos(center().x, center().y + 160),
     anchor("center"),
-    color(0, 0, 0),
+    color(220, 230, 220),
     fixed(),
   ]);
 
   // MENU
   const menuBtn = add([
     rect(160, 40),
-    pos(center().x + 120, center().y + 90),
+    pos(center().x + 120, center().y + 160),
     area(),
-    color(200, 100, 100),
+    color(95, 80, 70),
     anchor("center"),
     fixed(),
   ]);
 
   add([
     text("MENU", { size: 16 }),
-    pos(center().x + 120, center().y + 90),
+    pos(center().x + 120, center().y + 160),
     anchor("center"),
-    color(0, 0, 0),
+    color(220, 230, 220),
     fixed(),
   ]);
 
