@@ -31,6 +31,9 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+loadFont("dungeon", "assets/DungeonFont.ttf");
+loadSprite("menuBg", "assets/Menu/BackGround.png");
+loadSprite("endBg", "assets/end/BackGround.png");
 loadSound("menuMusic", "assets/Menu/chill.mp3");
 loadSound("l1Music", "assets/level1/Music/cave.mp3");
 loadSound("l1Dropplets", "assets/level1/Sound/dropplets.mp3");
@@ -144,22 +147,18 @@ loadSprite("waterAnim", "assets/level3/water/water_anim.png", {
   anims: { flow: { from: 0, to: 5, loop: true, speed: 7 } },
 });
 
-// Frog player — individual spritesheets for smooth animation
-loadSprite("frogIdle", "assets/level3/frog/frogger_idle.png", {
-  sliceX: 5,
-  anims: { idle: { from: 0, to: 4, loop: true, speed: 5 } },
-});
-loadSprite("frogMove", "assets/level3/frog/frogger_move.png", {
-  sliceX: 24,
-  anims: { move: { from: 0, to: 23, loop: true, speed: 10 } },
-});
-loadSprite("frogHurt", "assets/level3/frog/frogger_hurt.png", {
-  sliceX: 12,
-  anims: { hurt: { from: 0, to: 11, loop: false, speed: 10 } },
-});
-loadSprite("frogTongue", "assets/level3/frog/frogger_tongue.png", {
-  sliceX: 24,
-  anims: { tongue: { from: 0, to: 23, loop: false, speed: 16 } },
+// Frog player — combined spritesheet (8x5 grid, 39 valid frames of 128x128)
+// Tongue tip frames composited with body frames. Zero sprite-swapping.
+loadSprite("frogPlayer", "assets/level3/frog/frogger_combined.png", {
+  sliceX: 8,
+  sliceY: 5,
+  anims: {
+    idle:   { from: 0,  to: 4,  loop: true,  speed: 8  },
+    move:   { from: 5,  to: 12, loop: true,  speed: 12 },
+    hurt:   { from: 13, to: 16, loop: false, speed: 10 },
+    spit:   { from: 17, to: 30, loop: false, speed: 18 },
+    tongue: { from: 31, to: 38, loop: false, speed: 14 },
+  },
 });
 
 
@@ -171,12 +170,9 @@ loadSprite("chestEmpty", "assets/level3/coffre_sansclé.png", {
     open:   { from: 0, to: 1, loop: false, speed: 3 },
   },
 });
-// Key chest (contains swamp key) — single static image, swap to open state manually
-loadSprite("chestKeyClosed", "assets/level3/coffre_clé.png");
-loadSprite("chestKeyOpen", "assets/level3/coffre_sansclé.png", {
-  sliceX: 2,
-  anims: { open: { from: 1, to: 1, loop: false, speed: 1 } },
-});
+// Key chest — separate images to avoid sliceX rendering issues
+loadSprite("chestKeyClosed", "assets/level3/coffre_cle_closed.png");
+loadSprite("chestKeyOpen", "assets/level3/coffre_cle_open.png");
 
 // Level 3 frog NPC
 loadSprite("frogNPC", "assets/level3/frog/frogB_sheet.png", {
@@ -517,7 +513,7 @@ function spawnFloatingText(msg, x, y, col, opts = {}) {
 function showDialog({ lines, iconColor, onDone, npcName }) {
   let idx = 0;
   const bubbleY = height() * 0.85;
-  const name = npcName || "???";
+  const name = npcName || "Karabos";
 
   // No backdrop — player can keep moving
   const bubble = add([
@@ -582,18 +578,26 @@ function showDialog({ lines, iconColor, onDone, npcName }) {
 }
 
 scene("menu", () => {
+  // Background image
   add([
-    rect(width(), height()),
-    color(40, 40, 40),
+    sprite("menuBg", { width: width(), height: height() }),
     pos(0, 0),
-    fixed(),
+    fixed(), z(-1),
   ]);
 
   add([
-    text("KAGE — Un nouveau refuge", { size: 36 }),
-    pos(center().x, center().y - 120),
+    text("KAGE", { size: 56, font: "dungeon" }),
+    pos(center().x, center().y - 140),
     anchor("center"),
-    fixed(),
+    color(255, 240, 200),
+    fixed(), z(10),
+  ]);
+  add([
+    text("A shifting path", { size: 20, font: "dungeon" }),
+    pos(center().x, center().y - 100),
+    anchor("center"),
+    color(200, 200, 180),
+    fixed(), z(10),
   ]);
 
   // Button PLAY
@@ -603,14 +607,14 @@ scene("menu", () => {
     area(),
     color(100, 150, 255),
     anchor("center"),
-    fixed(),
+    fixed(), z(5),
   ]);
   add([
     text("JOUER", { size: 20 }),
     pos(center().x, center().y - 20),
     anchor("center"),
     color(255, 255, 255),
-    fixed(),
+    fixed(), z(6),
   ]);
 
   // Button SELECT LEVEL
@@ -620,14 +624,14 @@ scene("menu", () => {
     area(),
     color(150, 255, 150),
     anchor("center"),
-    fixed(),
+    fixed(), z(5),
   ]);
   add([
     text("SELECT LEVEL", { size: 16 }),
     pos(center().x, center().y + 50),
     anchor("center"),
     color(0, 0, 0),
-    fixed(),
+    fixed(), z(6),
   ]);
 
   // Button CREDITS
@@ -637,35 +641,35 @@ scene("menu", () => {
     area(),
     color(255, 200, 100),
     anchor("center"),
-    fixed(),
+    fixed(), z(5),
   ]);
   add([
     text("CREDITS", { size: 16 }),
     pos(center().x, center().y + 110),
     anchor("center"),
     color(0, 0, 0),
-    fixed(),
+    fixed(), z(6),
   ]);
 
   const volLabel = add([
     text(`Volume: ${Math.round(gameState.volume * 100)}%`, { size: 14 }),
     pos(center().x, center().y + 170),
-    anchor("center"), color(200, 200, 200), fixed(),
+    anchor("center"), color(200, 200, 200), fixed(), z(6),
   ]);
 
   const volDown = add([
     rect(36, 30), pos(center().x - 80, center().y + 205),
-    area(), color(180, 80, 80), anchor("center"), fixed(),
+    area(), color(180, 80, 80), anchor("center"), fixed(), z(5),
   ]);
   add([text("−", { size: 20 }), pos(center().x - 80, center().y + 205),
-    anchor("center"), color(255, 255, 255), fixed()]);
+    anchor("center"), color(255, 255, 255), fixed(), z(6)]);
 
   const volUp = add([
     rect(36, 30), pos(center().x + 80, center().y + 205),
-    area(), color(80, 180, 80), anchor("center"), fixed(),
+    area(), color(80, 180, 80), anchor("center"), fixed(), z(5),
   ]);
   add([text("+", { size: 20 }), pos(center().x + 80, center().y + 205),
-    anchor("center"), color(255, 255, 255), fixed()]);
+    anchor("center"), color(255, 255, 255), fixed(), z(6)]);
 
   volDown.onClick(() => {
     gameState.volume = Math.max(0, gameState.volume - 0.1);
@@ -793,19 +797,26 @@ scene("credits", () => {
     fixed(),
   ]);
 
-  add([
-    text(
-      "Développé avec Kaplay.js\n\n" +
-      "Idées & Programmation : Armand\n" +
-      "Game Design : the14collective - en cours d'ajout\n" +
-      "Musique & Sons : à venir\n\n" +
-      "Merci d'avoir joué !",
-      { size: 16, width: 420 }
-    ),
-    pos(center()),
-    anchor("center"),
-    fixed(),
-  ]);
+add([
+  text(
+    "Développé avec Kaplay.js\n\n" +
+
+    "Idées & Programmation : Armin\n\n" +
+
+    "Game Design : Admurin - karsiori - MonoPixelArt - the14collective - zneeke\n\n" +
+
+    "Musique & Sons : DRAGON-STUDIO - Fablefly Music - Spencer_YK\n\n" +
+
+    "Beta Testing : Adri - Micka - Nono\n\n" +
+
+    "Merci d'avoir joué !",
+    { size: 18 }
+  ),
+  pos(center()),
+  anchor("center"),
+  fixed(),
+]);
+
 
   const backBtn = add([
     rect(140, 40),
@@ -1176,8 +1187,8 @@ scene("level1", () => {
       f.t += dt();
       f.pos.y = f.baseY + Math.sin(f.t * 2.5) * 8;
       f.pos.x += f.dir * f.speed * dt();
-      if (f.pos.x > f.rightB) { f.dir = -1; f.flipX = false; }
-      if (f.pos.x < f.leftB) { f.dir = 1; f.flipX = true; }
+      if (f.pos.x > f.rightB) { f.dir = -1; f.flipX = true; }
+      if (f.pos.x < f.leftB) { f.dir = 1; f.flipX = false; }
     });
     flyEntities.push(f);
   }
@@ -1309,7 +1320,7 @@ scene("level1", () => {
   ]);
   bat.flipY = true;
   bat.onUpdate(() => { bat.t += dt(); bat.pos.y = batCeilY + Math.sin(bat.t * 2) * 3; });
-  const batLabel = add([text("? Vespertilio", { size: 13 }), pos(220, batCeilY + 70),
+  const batLabel = add([text("Chiro", { size: 13 }), pos(220, batCeilY + 70),
     anchor("center"), color(200, 180, 255), z(10)]);
   let batMet = false;
   let batAnim = null;
@@ -1356,10 +1367,10 @@ scene("level1", () => {
         batMet = true;
         dialogOpen = true;
         showDialog({
-          npcName: "Vespertilio",
+          npcName: "Chiro",
           iconColor: rgb(90, 65, 130),
           lines: [
-            "Bonsoir petit KAGE ! Je suis Vespertilio, la chauve-souris.",
+            "Bonsoir petit KAGE ! Je suis Chiro, la chauve-souris.",
             "Sais-tu comment je me déplace dans le noir complet ?",
             "J'utilise l'ÉCHOLOCATION ! J'envoie des ondes sonores...",
             "... et quand elles rebondissent, je 'vois' les obstacles autour de moi !",
@@ -1827,7 +1838,7 @@ scene("level2", () => {
   ]);
 
   const beetleLabel = add([
-    text("? Stercus", { size: 13 }),
+    text("Karabos", { size: 13 }),
     pos(300, 310), anchor("center"),
     color(255, 230, 140), z(10), { t: 0 },
   ]);
@@ -1853,15 +1864,15 @@ scene("level2", () => {
     beetleTriggered = true;
     beetleDialogOpen = true;
     beetleNPC.unuse("beetle-npc");
-    beetleLabel.text = "Stercus";
+    beetleLabel.text = "Karabos";
     beetleLabel.opacity = 1;
     beetleLabel.color = rgb(255, 200, 60);
 
     showDialog({
-      npcName: "Stercus",
+      npcName: "Karabos",
       iconColor: rgb(200, 140, 40),
       lines: [
-        "Hé toi ! Je suis Stercus, le scarabée bousier.",
+        "Hé toi ! Je suis Karabos, le scarabée bousier.",
         "Sais-tu que je peux pousser des objets 1 141 fois mon poids ?",
         "C'est comme si toi tu poussais 6 bus en même temps !",
         "Je vais te donner cette force. Utilise SHIFT pour charger.",
@@ -2305,20 +2316,19 @@ scene("level3", () => {
     });
   }
 
-  // 13 lily pads at water surface
-  addLilyPad(147.1, 384.1, "lilyMed3", 1.5);
-  addLilyPad(241, 387.3, "lilyBig", 1.4);
-  addLilyPad(387.8, 385.8, "lilyBig", 1.4);
-  addLilyPad(700.2, 389.8, "lilySmall", 1.7);
-  addLilyPad(739.8, 392.2, "lilySmall", 1.7);
-  addLilyPad(981.7, 385.8, "lilyBig", 1.4);
-  addLilyPad(1164.3, 381, "lilyMed3", 1.5);
-  addLilyPad(1257.9, 388, "lilySmall", 1.7);
-  addLilyPad(1361.8, 380.8, "lilyMed3", 1.5);
-  addLilyPad(1471.8, 383.2, "lilyBig", 1.4);
-  addLilyPad(1591.5, 388.2, "lilySmall", 1.7);
-  addLilyPad(1678, 380.8, "lilyMed3", 1.5);
-  addLilyPad(1809.3, 385, "lilyBig", 1.4);
+  // Large lily pads at specified positions
+  addLilyPad(149.4, 384.2, "lilyBig", 1.5);
+  addLilyPad(275, 384, "lilyBig", 1.5);
+  addLilyPad(400.5, 384, "lilyBig", 1.5);
+  addLilyPad(991.3, 384, "lilyBig", 1.5);
+  addLilyPad(1200, 384, "lilyBig", 1.5);
+  addLilyPad(1376.9, 384.2, "lilyBig", 1.5);
+  addLilyPad(1697.2, 384.2, "lilyBig", 1.5);
+  // Small lily pads scattered in gaps
+  addLilyPad(550, 389, "lilySmall", 1.6);
+  addLilyPad(740, 390, "lilySmall", 1.6);
+  addLilyPad(1550, 389, "lilySmall", 1.6);
+  addLilyPad(1870, 388, "lilyMed3", 1.4);
 
   // Lamp positions with fireflies (exact coordinates from image)
   const lampPositions = [
@@ -2418,7 +2428,7 @@ scene("level3", () => {
   addHitbox(106, 209, 227, 74);       // NPC frog platform
   addHitbox(0.5, 352.1, 137, 65);     // bottom-left platform (empty chest)
   addHitbox(0, 98, 195, 40);          // top-left ceiling platform
-  addHitbox(23.9, 323, 85, 37);       // bottom-left small ledge
+  // Removed small ledge (23.9, 323, 85, 37) that was blocking access to bottom-left platform
 
   // One-way platform (pass through from below, land on top)
   function addOneWayPlatform(x, y, w, h) {
@@ -2441,7 +2451,8 @@ scene("level3", () => {
   // --- CENTER SECTION ---
   addHitbox(687, 292, 227, 74);       // center island
   addHitbox(823.5, 211.2, 139, 25);   // mid floating platform
-  addOneWayPlatform(834, 84.2, 53.5, 29);  // one-way platform + false empty chest
+  addHitbox(743.3, 118.4, 42.8, 14.5);   // solid platform (mid-left)
+  addHitbox(835, 83.9, 52.5, 14.5);      // solid platform + false empty chest
   addHitbox(1085.9, 82.4, 61, 28);    // platform with true key chest
 
   // --- LADDER (tree trunk, full height) ---
@@ -2472,7 +2483,7 @@ scene("level3", () => {
     pos(200, 209), area(), anchor("bot"), scale(3.5), "frog-npc", z(10),
   ]);
   const frogLabel = add([
-    text("? Ribbit", { size: 13 }),
+    text("Rana", { size: 13 }),
     pos(200, 170), anchor("center"), color(180, 255, 180), z(10), { t: 0 },
   ]);
   frogLabel.onUpdate(() => {
@@ -2529,14 +2540,12 @@ scene("level3", () => {
 
   function respawn() {
     if (player.canFrog) {
-      player.unuse("sprite");
-      player.use(sprite("frogHurt", { anim: "hurt" }));
-      player.frogAnim = "hurt"; player.frogSprite = "frogHurt";
+      player.play("hurt");
+      player.frogAnim = "hurt";
       wait(0.5, () => {
         if (player.frogAnim === "hurt") {
-          player.unuse("sprite");
-          player.use(sprite("frogIdle", { anim: "idle" }));
-          player.frogAnim = "idle"; player.frogSprite = "frogIdle";
+          player.play("idle");
+          player.frogAnim = "idle";
         }
       });
     } else {
@@ -2555,13 +2564,13 @@ scene("level3", () => {
   player.onCollide("frog-npc", () => {
     if (player.canFrog) return;
     frog.unuse("frog-npc"); frogDialogOpen = true;
-    frogLabel.text = "Ribbit";
+    frogLabel.text = "Rana";
     frogLabel.color = rgb(120, 255, 160); frogLabel.opacity = 1;
     showDialog({
-      npcName: "Ribbit",
+      npcName: "Rana",
       iconColor: rgb(80, 190, 80),
       lines: [
-        "Croa croa ! Je suis Ribbit, la grenouille du marais.",
+        "Croa croa ! Je suis Rana, la grenouille du marais.",
         "Sais-tu que les grenouilles peuvent sauter 20 fois leur propre taille ?",
         "Nos pattes arrières sont de véritables ressorts !",
         "Je vais te transformer en grenouille. Maintiens C pour charger ton saut.",
@@ -2576,11 +2585,10 @@ scene("level3", () => {
         spawnBurstParticles(player.pos.x, player.pos.y, 25,
           [rgb(80, 220, 80), rgb(120, 255, 100), rgb(200, 255, 100)]);
         player.unuse("sprite");
-        player.use(sprite("frogIdle", { anim: "idle" }));
+        player.use(sprite("frogPlayer", { anim: "idle" }));
         player.use(scale(0.45));
         player.use(area({ shape: new Rect(vec2(0), 128, 128) }));
         player.frogAnim = "idle";
-        player.frogSprite = "frogIdle";
         const ok = add([
           text("TRANSFORMATION!", { size: 18 }),
           pos(0, -70), fixed(), anchor("center"),
@@ -2650,15 +2658,13 @@ scene("level3", () => {
     if (isKeyDown("left") || isKeyDown("a")) d -= 1;
     if (isKeyDown("right") || isKeyDown("d")) d += 1;
 
-    if (player.canFrog && player.frogAnim !== "hurt") {
+    if (player.canFrog && player.frogAnim !== "hurt" && player.frogAnim !== "tongue") {
       if (d !== 0 && player.frogAnim !== "move") {
-        player.unuse("sprite");
-        player.use(sprite("frogMove", { anim: "move" }));
-        player.frogAnim = "move"; player.frogSprite = "frogMove";
+        player.play("move");
+        player.frogAnim = "move";
       } else if (d === 0 && player.frogAnim === "move") {
-        player.unuse("sprite");
-        player.use(sprite("frogIdle", { anim: "idle" }));
-        player.frogAnim = "idle"; player.frogSprite = "frogIdle";
+        player.play("idle");
+        player.frogAnim = "idle";
       }
       if (d < 0) player.flipX = true; else if (d > 0) player.flipX = false;
     } else if (!player.canFrog && !player.isHurt) {
@@ -2716,8 +2722,8 @@ scene("level3", () => {
       f.t += dt();
       f.pos.y = f.baseY + Math.sin(f.t * 2.5) * 8;
       f.pos.x += f.dir * f.speed * dt();
-      if (f.pos.x > f.rightB) { f.dir = -1; f.flipX = false; }
-      if (f.pos.x < f.leftB) { f.dir = 1; f.flipX = true; }
+      if (f.pos.x > f.rightB) { f.dir = -1; f.flipX = true; }
+      if (f.pos.x < f.leftB) { f.dir = 1; f.flipX = false; }
     });
   }
 
@@ -2737,14 +2743,12 @@ scene("level3", () => {
     l3FlyUI.text = `Flies: ${l3Flies}/${L3_FLY_TOTAL}`;
     // Tongue animation when catching fly
     if (player.canFrog) {
-      player.unuse("sprite");
-      player.use(sprite("frogTongue", { anim: "tongue" }));
-      player.frogAnim = "tongue"; player.frogSprite = "frogTongue";
+      player.play("tongue");
+      player.frogAnim = "tongue";
       wait(0.6, () => {
         if (player.frogAnim === "tongue") {
-          player.unuse("sprite");
-          player.use(sprite("frogIdle", { anim: "idle" }));
-          player.frogAnim = "idle"; player.frogSprite = "frogIdle";
+          player.play("idle");
+          player.frogAnim = "idle";
         }
       });
     }
@@ -2760,10 +2764,23 @@ scene("level3", () => {
     "emptyChest",
     { opened: false },
   ]);
+  // Floating "?" label for empty chest 1
+  const emptyChest1Label = add([
+    text("?", { size: 14 }),
+    pos(69, 352.1 - 46),
+    anchor("center"), color(180, 160, 100), z(31),
+    { t: 0 },
+  ]);
+  emptyChest1Label.onUpdate(() => {
+    emptyChest1Label.t += dt();
+    emptyChest1Label.pos.y = (352.1 - 46) + Math.sin(emptyChest1Label.t * 3) * 3;
+    emptyChest1Label.opacity = 0.7 + Math.sin(emptyChest1Label.t * 4) * 0.3;
+  });
   player.onCollide("emptyChest", (ch) => {
     if (ch.opened) return;
     ch.opened = true;
     ch.play("open");
+    if (ch === emptyChest1) destroy(emptyChest1Label);
     showTopMessage("Empty chest... keep looking!", 2, rgb(180, 160, 100));
   });
 
@@ -2782,7 +2799,6 @@ scene("level3", () => {
   const CHEST_X = 1116.4;   // platform center X (1085.9 + 61/2)
   const CHEST_Y = 82.4;     // top of platform
 
-  // Key chest sprite (full image, no slicing)
   const chestSprite = add([
     sprite("chestKeyClosed"),
     pos(CHEST_X, CHEST_Y),
@@ -2812,9 +2828,9 @@ scene("level3", () => {
     chestSprite.opened = true;
     gameState.hasSwampKey = true;
 
-    // Swap to open chest sprite
+    // Swap to open chest sprite (separate images avoid sliceX issues)
     chestSprite.unuse("sprite");
-    chestSprite.use(sprite("chestKeyOpen", { anim: "open" }));
+    chestSprite.use(sprite("chestKeyOpen"));
 
     // hide "?" label
     destroy(chestLabel);
@@ -2984,11 +3000,11 @@ scene("outro", () => {
 scene("end", () => {
   playMusic("menuMusic", 0.3);
 
+  // Background image
   add([
-    rect(width(), height()),
-    color(10, 10, 10),
+    sprite("endBg", { width: width(), height: height() }),
     pos(0, 0),
-    fixed(),
+    fixed(), z(-1),
   ]);
 
   const totalTime = gameState.startTime
@@ -2999,10 +3015,10 @@ scene("end", () => {
   const seconds = totalTime % 60;
 
   add([
-    text("THE END — Thank you for playing!", { size: 36 }),
+    text("THE END — Thank you for playing!", { size: 36, font: "dungeon" }),
     pos(center().x, center().y - 120),
     anchor("center"),
-    fixed(),
+    fixed(), z(10),
   ]);
 
   add([
