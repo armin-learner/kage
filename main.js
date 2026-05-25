@@ -164,7 +164,7 @@ loadSprite("frogPlayer", "assets/level3/frog/frogger_combined.png", {
 
 
 // Empty chest (no key inside)
-loadSprite("chestEmpty", "assets/level3/coffre_sansclé.png", {
+loadSprite("chestEmpty", "assets/level3/coffre_sanscle.png", {
   sliceX: 2,
   anims: {
     closed: { from: 0, to: 0, loop: false, speed: 1 },
