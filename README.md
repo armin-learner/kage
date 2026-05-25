@@ -38,10 +38,11 @@ Le jeu est encadre par :
 > 6. **Ecran de fin** — le background de fin avec les statistiques et les boutons
 > 7. *(Optionnel)* **Dialogue PNJ** — un moment d'interaction avec un des PNJ (Chiro, Karabos ou Rana)
 
-![Menu principal](Capture%20d%E2%80%99%C3%A9cran%202026-04-24%20%C3%A0%2017.53.48.png)
-![Niveau 1 — L'Echo des Profondeurs](Capture%20d%E2%80%99%C3%A9cran%202026-05-13%20%C3%A0%2009.51.11.png)
-![Niveau 2 — Les Sentiers Enracines](Capture%20d%E2%80%99%C3%A9cran%202026-05-13%20%C3%A0%2009.50.51.png)
-![Niveau 3 — Le Marecage Oublie](Capture%20d%E2%80%99%C3%A9cran%202026-05-13%20%C3%A0%2009.51.22.png)
+![Menu principal](menu.png)
+![Niveau 1 — L'Echo des Profondeurs](lvl1.png)
+![Niveau 2 — Les Sentiers Enracines](lvl2.png)
+![Niveau 3 — Le Marecage Oublie](lvl3.png)
+![Ecran de fin](end.png)
 
 ---
 
