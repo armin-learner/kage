@@ -28,16 +28,6 @@ Le jeu est encadre par :
 
 ## 2. Captures du projet
 
-> **Captures recommandees a inclure :**
->
-> 1. **Menu principal** — l'ecran titre avec le background de la caverne et les boutons JOUER / SELECTION DE NIVEAU / CREDITS
-> 2. **Introduction / Cinematique** — une page du texte narratif avec l'effet de tremblement de terre
-> 3. **Niveau 1 — L'Echo des Profondeurs** — le joueur en forme de chauve-souris volant dans la grotte avec le parallaxe et l'echolocalisation
-> 4. **Niveau 2 — Les Sentiers Enracines** — le joueur gobelin/scarabee dans la foret, montrant le decor et les champignons ennemis
-> 5. **Niveau 3 — Le Marecage Oublie** — le joueur grenouille sur les nenuphars avec l'eau animee
-> 6. **Ecran de fin** — le background de fin avec les statistiques et les boutons
-> 7. *(Optionnel)* **Dialogue PNJ** — un moment d'interaction avec un des PNJ (Chiro, Karabos ou Rana)
-
 ![Menu principal](menu.png)
 ![Niveau 1 — L'Echo des Profondeurs](lvl1.png)
 ![Niveau 2 — Les Sentiers Enracines](lvl2.png)
