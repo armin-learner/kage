@@ -30,15 +30,15 @@ window.addEventListener("keydown", (e) => {
     }
   }
 });
-
-loadFont("dungeon", "assets/DungeonFont.ttf");
 loadSprite("menuBg", "assets/Menu/BackGround.png");
 loadSprite("endBg", "assets/end/BackGround.png");
+loadSprite("outroBg", "assets/end/BackGround2.png");
 loadSound("menuMusic", "assets/Menu/chill.mp3");
 loadSound("l1Music", "assets/level1/Music/cave.mp3");
 loadSound("l1Dropplets", "assets/level1/Sound/dropplets.mp3");
 loadSound("l2Music", "assets/level2/Music/chill.mp3");
 loadSound("l3Music", "assets/level3/Music/lily.wav");
+loadSound("earthRumble", "freesound_community-earth-rumble-6953.mp3");
 
 
 // Player base character — goblin scout silhouette (59 frames, 64x64 each)
@@ -171,12 +171,12 @@ loadSprite("chestEmpty", "assets/level3/coffre_sansclé.png", {
     open:   { from: 0, to: 1, loop: false, speed: 3 },
   },
 });
-// Key chest — 4-frame spritesheet (closed → opening → open with key)
-loadSprite("chestKey", "assets/level3/chest.png", {
-  sliceX: 4,
+// Key chest — 3-frame spritesheet (closed → opening → open with key)
+loadSprite("chestKey", "assets/level3/chest_key_final.png", {
+  sliceX: 3,
   anims: {
     closed: { from: 0, to: 0, loop: false, speed: 1 },
-    open:   { from: 0, to: 3, loop: false, speed: 8 },
+    open:   { from: 0, to: 2, loop: false, speed: 5 },
   },
 });
 
@@ -186,7 +186,16 @@ loadSprite("frogNPC", "assets/level3/frog/frogB_sheet.png", {
   anims: { hop: { from: 0, to: 3, loop: true, speed: 3 } },
 });
 
+// Persistence flag: has the player ever finished the game once?
+function loadEverCompleted() {
+  try { return localStorage.getItem('kage_everCompleted') === '1'; } catch(e) { return false; }
+}
+function saveEverCompleted() {
+  try { localStorage.setItem('kage_everCompleted', '1'); } catch(e) {}
+}
+
 const gameState = {
+  everCompleted: loadEverCompleted(),
   totalCollected: 0,
   level1Flies: 0,
   level2Mushrooms: 0,
@@ -279,7 +288,7 @@ function togglePause() {
       area(),
       color(80, 120, 200),
     ]);
-    btnResume.add([text("RESUME", { size: 16 }), anchor("center")]);
+    btnResume.add([text("REPRENDRE", { size: 16 }), anchor("center")]);
     btnResume.onClick(() => togglePause());
 
     const btnQuit = container.add([
@@ -289,7 +298,7 @@ function togglePause() {
       area(),
       color(120, 120, 120),
     ]);
-    btnQuit.add([text("MAIN MENU", { size: 16 }), anchor("center")]);
+    btnQuit.add([text("MENU PRINCIPAL", { size: 16 }), anchor("center")]);
     btnQuit.onClick(() => {
       gameState.paused = false;
       destroy(pauseMenu);
@@ -518,7 +527,8 @@ function spawnFloatingText(msg, x, y, col, opts = {}) {
 // NPC dialog — non-blocking (player can move during dialog)
 function showDialog({ lines, iconColor, onDone, npcName }) {
   let idx = 0;
-  const bubbleY = height() * 0.85;
+  // Bubble in upper third so it never overlaps the player or ground action
+  const bubbleY = height() * 0.18;
   const name = npcName || "Karabos";
 
   // No backdrop — player can keep moving
@@ -558,7 +568,7 @@ function showDialog({ lines, iconColor, onDone, npcName }) {
   ]);
 
   const hint = add([
-    text("SPACE ▶", { size: 10 }),
+    text("ESPACE ▶", { size: 10 }),
     pos(center().x + 225, bubbleY + 36),
     anchor("right"), color(150, 140, 105),
     fixed(), z(1001), { t: 0 },
@@ -591,21 +601,6 @@ scene("menu", () => {
     fixed(), z(-1),
   ]);
 
-  add([
-    text("KAGE", { size: 56, font: "dungeon" }),
-    pos(center().x, center().y - 140),
-    anchor("center"),
-    color(255, 240, 200),
-    fixed(), z(10),
-  ]);
-  add([
-    text("A shifting path", { size: 20, font: "dungeon" }),
-    pos(center().x, center().y - 100),
-    anchor("center"),
-    color(200, 200, 180),
-    fixed(), z(10),
-  ]);
-
   // Button PLAY
   const playBtn = add([
     rect(220, 50),
@@ -623,22 +618,31 @@ scene("menu", () => {
     fixed(), z(6),
   ]);
 
-  // Button SELECT LEVEL
+  // Button SELECT LEVEL — locked until first completion
+  const levelSelectUnlocked = gameState.everCompleted;
   const selectBtn = add([
     rect(220, 44),
     pos(center().x, center().y + 95),
     area(),
-    color(85, 110, 95),
+    color(levelSelectUnlocked ? 85 : 60, levelSelectUnlocked ? 110 : 60, levelSelectUnlocked ? 95 : 65),
+    opacity(levelSelectUnlocked ? 1 : 0.55),
     anchor("center"),
     fixed(), z(5),
   ]);
   add([
-    text("SELECT LEVEL", { size: 16 }),
+    text(levelSelectUnlocked ? "SÉLECTION DE NIVEAU" : "🔒 SÉLECTION DE NIVEAU", { size: 14 }),
     pos(center().x, center().y + 95),
     anchor("center"),
-    color(230, 220, 190),
+    color(levelSelectUnlocked ? rgb(230, 220, 190) : rgb(170, 160, 140)),
     fixed(), z(6),
   ]);
+  if (!levelSelectUnlocked) {
+    add([
+      text("Termine le jeu une fois pour débloquer", { size: 11 }),
+      pos(center().x, center().y + 120),
+      anchor("center"), color(180, 170, 150), fixed(), z(6),
+    ]);
+  }
 
   // Button CREDITS
   const creditsBtn = add([
@@ -650,7 +654,7 @@ scene("menu", () => {
     fixed(), z(5),
   ]);
   add([
-    text("CREDITS", { size: 16 }),
+    text("CRÉDITS", { size: 16 }),
     pos(center().x, center().y + 155),
     anchor("center"),
     color(230, 220, 190),
@@ -706,7 +710,13 @@ scene("menu", () => {
     fadeOutThen("intro", 0.35);
   });
 
-  selectBtn.onClick(() => fadeOutThen("levelSelect", 0.35));
+  selectBtn.onClick(() => {
+    if (!levelSelectUnlocked) {
+      showTopMessage("🔒 Termine le jeu au moins une fois pour débloquer", 2.5, rgb(255, 180, 100));
+      return;
+    }
+    fadeOutThen("levelSelect", 0.35);
+  });
   creditsBtn.onClick(() => fadeOutThen("credits", 0.35));
 
   onKeyPress("enter", () => {
@@ -720,6 +730,8 @@ scene("menu", () => {
 });
 
 scene("levelSelect", () => {
+  // Guard: redirect to menu if not yet unlocked
+  if (!gameState.everCompleted) { go("menu"); return; }
   // Play menu music in level select
   playMusic("menuMusic", 0.3);
 
@@ -731,16 +743,16 @@ scene("levelSelect", () => {
   ]);
 
   add([
-    text("LEVEL SELECT", { size: 32 }),
+    text("SÉLECTION DE NIVEAU", { size: 32 }),
     pos(center().x, center().y - 120),
     anchor("center"),
     fixed(),
   ]);
 
   const entries = [
-    "1 — Level 1: Bat Cave",
-    "2 — Level 2: Beetle Forest",
-    "3 — Level 3: Swamp Kingdom",
+    "1 — Niveau 1 : L'Écho des Profondeurs",
+    "2 — Niveau 2 : Les Sentiers Enracinés",
+    "3 — Niveau 3 : Le Marécage Oublié",
   ];
   const scenes = ["level1", "level2", "level3"];
 
@@ -769,7 +781,7 @@ scene("levelSelect", () => {
   updateTabHighlight();
 
   add([
-    text("TAB: select   ENTER: confirm   ESC: back", { size: 12 }),
+    text("TAB : sélectionner   ENTRÉE : valider   ÉCHAP : retour", { size: 12 }),
     pos(center().x, center().y + 80),
     anchor("center"), fixed(), color(130, 120, 100),
   ]);
@@ -834,7 +846,7 @@ add([
   ]);
 
   add([
-    text("BACK", { size: 16 }),
+    text("RETOUR", { size: 16 }),
     pos(center().x, center().y + 120),
     anchor("center"),
     color(255, 255, 255),
@@ -850,11 +862,25 @@ add([
 scene("intro", () => {
   setGravity(0);
 
+  // Menu background behind the text (for earthquake effect)
+  const bgScale = Math.max(width() / 1920, height() / 960);
+  const introBg = add([
+    sprite("menuBg"),
+    pos(center().x, center().y),
+    anchor("center"),
+    scale(bgScale),
+    opacity(0.35),
+    fixed(),
+    z(-10),
+  ]);
+
   add([
     rect(width(), height()),
     color(10, 10, 15),
+    opacity(0.65),
     pos(0, 0),
     fixed(),
+    z(-5),
   ]);
 
   const pages = [
@@ -884,6 +910,7 @@ scene("intro", () => {
 
   let page = 0;
   let canAdvance = false;
+  let rumbleHandle = null;
 
   add([
     text("KAGE — L'éveil", { size: 36 }),
@@ -891,6 +918,7 @@ scene("intro", () => {
     anchor("center"),
     fixed(),
     color(200, 220, 255),
+    z(10),
   ]);
 
   const body = add([
@@ -899,15 +927,39 @@ scene("intro", () => {
     anchor("top"),
     fixed(),
     color(230, 230, 230),
+    z(10),
   ]);
 
   const hint = add([
-    text("▶ SPACE to continue", { size: 14 }),
+    text("▶ ESPACE pour continuer", { size: 14 }),
     pos(center().x, height() - 60),
     anchor("center"),
     fixed(),
     color(160, 160, 160),
+    z(10),
   ]);
+
+  // Earthquake screen-shake on the background image
+  function startEarthquake() {
+    rumbleHandle = play("earthRumble", { volume: 0.6, loop: false });
+    let elapsed = 0;
+    const duration = 4;
+    const intensity = 8;
+    const cx = center().x;
+    const cy = center().y;
+    const shakeEv = onUpdate(() => {
+      elapsed += dt();
+      if (elapsed >= duration) {
+        shakeEv.cancel();
+        introBg.pos.x = cx;
+        introBg.pos.y = cy;
+        return;
+      }
+      const decay = 1 - elapsed / duration;
+      introBg.pos.x = cx + (Math.random() - 0.5) * intensity * 2 * decay;
+      introBg.pos.y = cy + (Math.random() - 0.5) * intensity * 2 * decay;
+    });
+  }
 
   // Allow advancing after a short delay to prevent accidental skips
   wait(0.25, () => canAdvance = true);
@@ -917,9 +969,11 @@ scene("intro", () => {
 
     page++;
     if (page >= pages.length) {
+      if (rumbleHandle) { rumbleHandle.stop(); rumbleHandle = null; }
       fadeOutThen("level1", 0.5);
     } else {
       body.text = pages[page];
+      if (page === 1) startEarthquake();
     }
   });
 
@@ -930,18 +984,20 @@ scene("intro", () => {
 scene("level1", () => {
   gameState.currentScene = "level1";
   onKeyPress("t", () => { if (!gameState.paused) toggleCommandsMenu(); });
+  // Reminder: T opens the controls menu
+  wait(0.8, () => showTopMessage("Appuie sur T pour voir les contrôles", 4, rgb(200, 200, 255)));
   setGravity(0);
 
   // Level 1 music
   playMusic("l1Music", 0.3);
 
   // Droplets SFX — random ambient water drops
-  let dropTimer = rand(4, 8);
+  let dropTimer = rand(12, 20);
   onUpdate(() => {
     dropTimer -= dt();
     if (dropTimer <= 0) {
-      playSFX("l1Dropplets", { volume: 0.08 * gameState.volume });
-      dropTimer = rand(6, 12);
+      playSFX("l1Dropplets", { volume: 0.015 * gameState.volume });
+      dropTimer = rand(20, 35);
     }
   });
 
@@ -1161,7 +1217,7 @@ scene("level1", () => {
     doorGlow.t += dt();
     doorGlow.opacity = 0.05 + Math.sin(doorGlow.t * 2) * 0.04;
   });
-  add([text("EXIT ▶", { size: 16 }), pos(exitX, LAND_Y - 74 * doorScale - 10),
+  add([text("SORTIE ▶", { size: 16 }), pos(exitX, LAND_Y - 74 * doorScale - 10),
     anchor("center"), color(200, 180, 100), z(10)]);
 
   // Fly collectibles (replace gems)
@@ -1170,7 +1226,7 @@ scene("level1", () => {
   const flyEntities = [];
 
   const flyUI = add([
-    text(`Flies: 0/${FLY_TOTAL}`, { size: 16 }),
+    text(`Mouches : 0/${FLY_TOTAL}`, { size: 16 }),
     pos(20, 50), fixed(), anchor("topleft"),
     color(80, 220, 120), z(900),
   ]);
@@ -1230,10 +1286,19 @@ scene("level1", () => {
         if (warn.age > 0.9) destroy(warn);
       });
       wait(0.9, () => {
+        // Pointed jagged rock — drawn as a rotated diamond polygon for a stalactite look
         const rock = add([
-          rect(sz, sz), pos(rx, CEIL_Y + 5), anchor("center"),
-          color(sz > 30 ? 85 : 110, sz > 30 ? 70 : 90, sz > 30 ? 58 : 72),
-          outline(sz > 30 ? 2 : 1, rgb(65, 52, 42)),
+          polygon([
+            vec2(0, -sz * 0.7),
+            vec2(sz * 0.55, -sz * 0.15),
+            vec2(sz * 0.35, sz * 0.55),
+            vec2(-sz * 0.30, sz * 0.65),
+            vec2(-sz * 0.55, -sz * 0.10),
+          ]),
+          pos(rx, CEIL_Y + 5), anchor("center"),
+          color(sz > 30 ? 70 : 95, sz > 30 ? 58 : 78, sz > 30 ? 48 : 62),
+          outline(sz > 30 ? 2 : 1, rgb(40, 32, 25)),
+          rotate(rand(-25, 25)),
           { velY: 0, alive: true, sz },
         ]);
         fallingRocks.push(rock);
@@ -1293,7 +1358,7 @@ scene("level1", () => {
     onLandingPlat = false;
     gameState.deaths++;
     screenShake(5, 0.3);
-    showTopMessage("Ouch!", 1, rgb(255, 100, 80));
+    showTopMessage("Aïe !", 1, rgb(255, 100, 80));
   }
 
   function updateBatAnim(d) {
@@ -1315,8 +1380,8 @@ scene("level1", () => {
       player.play("idle");
       batAnim = "idle";
     }
-    if (d < 0) player.flipX = true;
-    else if (d > 0) player.flipX = false;
+    if (d < 0) player.flipX = false;
+    else if (d > 0) player.flipX = true;
   }
 
   const batCeilY = CEIL_Y + 60;
@@ -1324,7 +1389,7 @@ scene("level1", () => {
     sprite("batNPC", { anim: "sleep" }), pos(220, batCeilY), anchor("center"),
     scale(4), { t: 0 },
   ]);
-  bat.flipY = true;
+  // bat orientation: face naturally (no flip)
   bat.onUpdate(() => { bat.t += dt(); bat.pos.y = batCeilY + Math.sin(bat.t * 2) * 3; });
   const batLabel = add([text("Chiro", { size: 13 }), pos(220, batCeilY + 70),
     anchor("center"), color(200, 180, 255), z(10)]);
@@ -1384,11 +1449,12 @@ scene("level1", () => {
             "Sais-tu comment je me déplace dans le noir complet ?",
             "J'utilise l'ÉCHOLOCATION ! J'envoie des ondes sonores...",
             "... et quand elles rebondissent, je 'vois' les obstacles autour de moi !",
-            "Je vais te transformer en chauve-souris pour traverser cette grotte.",
+            "Observe-moi bien… En me regardant, tu pourras copier ma forme de chauve-souris !",
             "Attention : tu seras plongé dans l'obscurité totale !",
             "Utilise E pour envoyer des ultrasons et révéler ton chemin.",
             "Attrape les mouches sur ton passage — c'est notre nourriture !",
-            "La sortie est tout au bout, en haut à droite. Bon vol !"
+            "La sortie est tout au bout, en haut à droite. Bon vol !",
+            "Appuie sur T à tout moment pour revoir les commandes."
           ],
           onDone: () => {
             dialogOpen = false;
@@ -1473,7 +1539,7 @@ scene("level1", () => {
           // Restore background visibility
           bgVisible = true;
 
-          showTopMessage("Back on solid ground!", 3, rgb(180, 255, 160));
+          showTopMessage("De retour sur la terre ferme !", 3, rgb(180, 255, 160));
           return;
         }
       }
@@ -1527,8 +1593,8 @@ scene("level1", () => {
         playerFlies++;
         gameState.level1Flies++;
         gameState.totalCollected++;
-        flyUI.text = `Flies: ${playerFlies}/${FLY_TOTAL}`;
-        spawnFloatingText("+ Fly!", player.pos.x, player.pos.y - 30, rgb(80, 220, 120));
+        flyUI.text = `Mouches : ${playerFlies}/${FLY_TOTAL}`;
+        spawnFloatingText("+ Mouche !", player.pos.x, player.pos.y - 30, rgb(80, 220, 120));
         destroy(f);
       }
     }
@@ -1573,7 +1639,7 @@ scene("level1", () => {
     if (sonarCooldown > 0) return;
     sonarCooldown = SONAR_CD;
 
-    playSFX("l1Dropplets", { volume: 0.3 * gameState.volume });
+    playSFX("l1Dropplets", { volume: 0.12 * gameState.volume });
 
     const cx = player.pos.x;
     const cy = player.pos.y;
@@ -1629,6 +1695,8 @@ scene("level1", () => {
 scene("level2", () => {
   gameState.currentScene = "level2";
   onKeyPress("t", () => { if (!gameState.paused) toggleCommandsMenu(); });
+  // Reminder: T opens the controls menu
+  wait(0.8, () => showTopMessage("Appuie sur T pour voir les contrôles", 4, rgb(255, 230, 140)));
   setGravity(BASE_GRAVITY);
 
   // Level 2 music
@@ -1732,7 +1800,7 @@ scene("level2", () => {
   const GOBLIN_SCALE = 1.6;
   const player = add([
     sprite("goblin", { anim: "idle" }), pos(100, 355),
-    area({ shape: new Rect(vec2(0), 28, 36) }), body(), anchor("center"),
+    area({ shape: new Rect(vec2(0, -6), 28, 36) }), body(), anchor("center"),
     scale(GOBLIN_SCALE), z(20),
     {
       speed: 250,
@@ -1771,7 +1839,7 @@ scene("level2", () => {
     gameState.deaths++;
 
     screenShake(5, 0.3);
-    showTopMessage("Ouch!", 1, rgb(255, 100, 80));
+    showTopMessage("Aïe !", 1, rgb(255, 100, 80));
   }
 
   // Fall death
@@ -1782,7 +1850,7 @@ scene("level2", () => {
   let mushCount = 0; // current mushrooms available for dash
 
   const mushUI = add([
-    text(`Dashes: 0`, { size: 16 }),
+    text(`🍄 Dashes : 0`, { size: 16 }),
     pos(-width() / 2 + 16, -height() / 2 + 16),
     fixed(), anchor("topleft"),
     color(200, 120, 60), z(900),
@@ -1810,8 +1878,8 @@ scene("level2", () => {
     mushCount += 2;  // each mushroom gives 2 dashes
     gameState.level2Mushrooms++;
     gameState.totalCollected++;
-    mushUI.text = `Dashes: ${mushCount}`;
-    spawnFloatingText("+ Mushroom!", player.pos.x, player.pos.y - 40, rgb(200, 120, 60));
+    mushUI.text = `🍄 Dashes : ${mushCount}`;
+    spawnFloatingText("+ Champignon (2 dashes) !", player.pos.x, player.pos.y - 40, rgb(200, 120, 60));
     destroy(mush);
   }
 
@@ -1831,7 +1899,7 @@ scene("level2", () => {
     rect(64, 8), pos(-width() / 2 + 16, -height() / 2 + 40),
     fixed(), color(140, 180, 255), z(900),
   ]);
-  add([text("Vol", { size: 10 }),
+  add([text("Plané", { size: 10 }),
     pos(-width() / 2 + 16, -height() / 2 + 52),
     fixed(), anchor("topleft"), color(140, 180, 255), z(900)]);
 
@@ -1885,10 +1953,11 @@ scene("level2", () => {
         "Hé toi ! Je suis Karabos, le scarabée bousier.",
         "Sais-tu que je peux pousser des objets 1 141 fois mon poids ?",
         "C'est comme si toi tu poussais 6 bus en même temps !",
-        "Je vais te donner cette force. Utilise SHIFT pour charger.",
+        "Observe-moi attentivement et tu pourras copier ma force ! Utilise SHIFT pour charger.",
         "Mais attention : le dash ne fonctionne que si tu manges des champignons !",
         "Les champignons te donnent l'énergie nécessaire pour foncer.",
-        "Casse les piliers de pierre et trouve la sortie !"
+        "Casse les piliers de pierre et trouve la sortie !",
+        "Rappel : appuie sur T pour revoir toutes les commandes."
       ],
       onDone: () => {
         beetleDialogOpen = false;
@@ -1904,7 +1973,7 @@ scene("level2", () => {
         player.use(area({ shape: new Rect(vec2(0), 28, 14) }));
 
         const ok = add([
-          text("TRANSFORMATION!", { size: 18 }),
+          text("TRANSFORMATION !", { size: 18 }),
           pos(0, -70), fixed(), anchor("center"),
           color(255, 180, 50), z(1000),
         ]);
@@ -2086,11 +2155,11 @@ scene("level2", () => {
     if (gameState.paused || !player.canCharge) return;
     if (player.charging) return;
     if (mushCount <= 0) {
-      showTopMessage("Need mushrooms to dash!", 1.5, rgb(255, 120, 60));
+      showTopMessage("Mange un champignon pour dasher !", 1.8, rgb(255, 120, 60));
       return;
     }
     mushCount--;
-    mushUI.text = `Dashes: ${mushCount}`;
+    mushUI.text = `🍄 Dashes : ${mushCount}`;
     player.chargeDir = isKeyDown("left") ? -1 : 1;
     player.charging = true;
     player.chargeTimer = player.chargeTime;
@@ -2184,6 +2253,8 @@ scene("level2", () => {
 scene("level3", () => {
   gameState.currentScene = "level3";
   onKeyPress("t", () => { if (!gameState.paused) toggleCommandsMenu(); });
+  // Reminder: T opens the controls menu
+  wait(0.8, () => showTopMessage("Appuie sur T pour voir les contrôles", 4, rgb(140, 255, 180)));
   setGravity(BASE_GRAVITY);
   playMusic("l3Music", 0.3);
 
@@ -2413,7 +2484,7 @@ scene("level3", () => {
     rect(0, 10), pos(-width() / 2 + 16, -height() / 2 + 56),
     fixed(), color(120, 255, 160), z(900),
   ]);
-  add([text("Hold C", { size: 10 }),
+  add([text("Maintenir C", { size: 10 }),
     pos(-width() / 2 + 16, -height() / 2 + 70),
     fixed(), anchor("topleft"), color(120, 255, 160), z(900)]);
 
@@ -2514,7 +2585,7 @@ scene("level3", () => {
   const player = add([
     sprite("goblin", { anim: "idle" }),
     pos(50, 210),
-    area({ shape: new Rect(vec2(0, 8), 32, 48) }),
+    area({ shape: new Rect(vec2(0, -12), 32, 48) }),
     body(), anchor("center"), scale(2.0), z(20),
     {
       speed: 260, canFrog: false,
@@ -2567,7 +2638,7 @@ scene("level3", () => {
     player.frogCharging = false; player.frogCharge = 0;
     gameState.deaths++;
     screenShake(5, 0.3);
-    showTopMessage("Ouch!", 1, rgb(255, 100, 80));
+    showTopMessage("Aïe !", 1, rgb(255, 100, 80));
   }
 
   let frogDialogOpen = false;
@@ -2583,11 +2654,12 @@ scene("level3", () => {
         "Croa croa ! Je suis Rana, la grenouille du marais.",
         "Sais-tu que les grenouilles peuvent sauter 20 fois leur propre taille ?",
         "Nos pattes arrières sont de véritables ressorts !",
-        "Je vais te transformer en grenouille. Maintiens C pour charger ton saut.",
+        "Regarde mes pattes… En m'observant, tu pourras copier ma forme ! Maintiens C pour charger ton saut.",
         "Plus tu charges, plus tu bondis haut et loin !",
         "Attrape les mouches et explore le marais en hauteur...",
         "Trouve la clé cachée dans un coffre pour ouvrir la maison abandonnée.",
         "Ce sera ton nouveau refuge ! Bonne chance, croa !",
+        "N'oublie pas : appuie sur T pour voir les commandes.",
       ],
       onDone: () => {
         frogDialogOpen = false; player.canFrog = true;
@@ -2600,7 +2672,7 @@ scene("level3", () => {
         player.use(area({ shape: new Rect(vec2(0), 128, 128) }));
         player.frogAnim = "idle";
         const ok = add([
-          text("TRANSFORMATION!", { size: 18 }),
+          text("TRANSFORMATION !", { size: 18 }),
           pos(0, -70), fixed(), anchor("center"),
           color(120, 255, 160), z(1000),
         ]);
@@ -2613,7 +2685,7 @@ scene("level3", () => {
     if (cp.used) return;
     cp.used = true; cp.color = rgb(100, 255, 120);
     player.respawnX = cp.pos.x; player.respawnY = cp.pos.y - 20;
-    showTopMessage("Checkpoint!", 1.2, rgb(120, 255, 140));
+    showTopMessage("Checkpoint !", 1.2, rgb(120, 255, 140));
   });
 
   onKeyDown("c", () => {
@@ -2710,7 +2782,7 @@ scene("level3", () => {
   const L3_FLY_TOTAL = 5;
   let l3Flies = 0;
   const l3FlyUI = add([
-    text(`Flies: 0/${L3_FLY_TOTAL}`, { size: 14 }),
+    text(`Mouches : 0/${L3_FLY_TOTAL}`, { size: 14 }),
     pos(-width()/2 + 16, -height()/2 + 16),
     fixed(), anchor("topleft"), color(80, 220, 120), z(900),
   ]);
@@ -2750,7 +2822,7 @@ scene("level3", () => {
     l3Flies++;
     gameState.level3Flies++;
     gameState.totalCollected++;
-    l3FlyUI.text = `Flies: ${l3Flies}/${L3_FLY_TOTAL}`;
+    l3FlyUI.text = `Mouches : ${l3Flies}/${L3_FLY_TOTAL}`;
     // Tongue animation when catching fly
     if (player.canFrog) {
       player.play("tongue");
@@ -2762,7 +2834,7 @@ scene("level3", () => {
         }
       });
     }
-    spawnFloatingText("+ Fly!", f.pos.x, f.pos.y - 20, rgb(80, 220, 120), { size: 14, duration: 0.6, rise: 30 });
+    spawnFloatingText("+ Mouche !", f.pos.x, f.pos.y - 20, rgb(80, 220, 120), { size: 14, duration: 0.6, rise: 30 });
     destroy(f);
   });
 
@@ -2774,24 +2846,14 @@ scene("level3", () => {
     "emptyChest",
     { opened: false },
   ]);
-  // Floating "?" label for empty chest 1
-  const emptyChest1Label = add([
-    text("?", { size: 14 }),
-    pos(69, 352.1 - 46),
-    anchor("center"), color(180, 160, 100), z(31),
-    { t: 0 },
-  ]);
-  emptyChest1Label.onUpdate(() => {
-    emptyChest1Label.t += dt();
-    emptyChest1Label.pos.y = (352.1 - 46) + Math.sin(emptyChest1Label.t * 3) * 3;
-    emptyChest1Label.opacity = 0.7 + Math.sin(emptyChest1Label.t * 4) * 0.3;
-  });
+  // (no "?" label — chest is self-explanatory)
+  const emptyChest1Label = null;
   player.onCollide("emptyChest", (ch) => {
     if (ch.opened) return;
     ch.opened = true;
     ch.play("open");
-    if (ch === emptyChest1) destroy(emptyChest1Label);
-    showTopMessage("Empty chest... keep looking!", 2, rgb(180, 160, 100));
+    if (ch === emptyChest1 && emptyChest1Label) destroy(emptyChest1Label);
+    showTopMessage("Coffre vide... continue à chercher !", 2, rgb(180, 160, 100));
   });
 
   // --- FALSE CHEST on one-way platform (834, 84.2) ---
@@ -2813,25 +2875,15 @@ scene("level3", () => {
     sprite("chestKey", { anim: "closed" }),
     pos(CHEST_X, CHEST_Y),
     anchor("bot"),
-    scale(1.4),
+    scale(1.2),
     z(29),
     area({ shape: new Rect(vec2(-18, -20), 36, 20) }),
     "chest",
     { opened: false },
   ]);
 
-  // Chest label
-  const chestLabel = add([
-    text("?", { size: 14 }),
-    pos(CHEST_X, CHEST_Y - 46),
-    anchor("center"), color(255, 220, 80), z(31),
-    { t: 0 },
-  ]);
-  chestLabel.onUpdate(() => {
-    chestLabel.t += dt();
-    chestLabel.pos.y = (CHEST_Y - 46) + Math.sin(chestLabel.t * 3) * 3;
-    chestLabel.opacity = 0.7 + Math.sin(chestLabel.t * 4) * 0.3;
-  });
+  // (no "?" label)
+  const chestLabel = null;
 
   function openChest() {
     if (chestSprite.opened) return;
@@ -2841,8 +2893,7 @@ scene("level3", () => {
     // Play open animation on the spritesheet
     chestSprite.play("open");
 
-    // hide "?" label
-    destroy(chestLabel);
+    if (chestLabel) destroy(chestLabel);
 
     // Burst particles on open
     for (let i = 0; i < 30; i++) {
@@ -2879,11 +2930,11 @@ scene("level3", () => {
     });
 
     // show key icon and message
-    showTopMessage("Swamp Key found! The exit is now accessible.", 4, rgb(255, 220, 60));
+    showTopMessage("Clé du marais trouvée ! La sortie est ouverte.", 4, rgb(255, 220, 60));
 
     // persistent key icon (HUD)
     add([
-      text("🔑 Swamp Key", { size: 14 }),
+      text("🔑 Clé du marais", { size: 14 }),
       pos(20, 110), fixed(), anchor("topleft"),
       color(255, 220, 60), z(900),
     ]);
@@ -2921,12 +2972,12 @@ scene("level3", () => {
 
   // exit label
   const exitLabel = add([
-    text("EXIT ▶", { size: 16 }),
+    text("SORTIE ▶", { size: 16 }),
     pos(exitX, exitY - 60), anchor("center"),
     color(200, 180, 100), z(10),
   ]);
   const exitLockLabel = add([
-    text("🔒 Key required", { size: 12 }),
+    text("🔒 Clé requise", { size: 12 }),
     pos(exitX, exitY - 44), anchor("center"),
     color(255, 120, 80), z(10), { t: 0 },
   ]);
@@ -2946,7 +2997,7 @@ scene("level3", () => {
         // block exit without key (cooldown to avoid spam)
         if (exitLockMsgCooldown <= 0) {
           exitLockMsgCooldown = 3;
-          showTopMessage("The door is locked... find the key!", 2.5, rgb(255, 120, 80));
+          showTopMessage("La porte est verrouillée... trouve la clé !", 2.5, rgb(255, 120, 80));
         }
         return;
       }
@@ -2963,7 +3014,11 @@ scene("level3", () => {
 scene("outro", () => {
   setGravity(0);
 
-  add([rect(width(), height()), color(10, 10, 15), pos(0, 0), fixed()]);
+  add([
+    sprite("outroBg", { width: width(), height: height() }),
+    pos(0, 0), fixed(), z(-1),
+  ]);
+  add([rect(width(), height()), color(0, 0, 0), opacity(0.45), pos(0, 0), fixed(), z(0)]);
 
   const pages = [
     "Le voyage de KAGE n'a pas été simple.\n\nIl a quitté sa grotte et affronté le monde.",
@@ -2974,29 +3029,34 @@ scene("outro", () => {
   let i = 0;
 
   add([
-    text("KAGE — A New Home", { size: 34 }),
+    text("KAGE — Un nouveau foyer", { size: 34 }),
     pos(center().x, 80),
     anchor("center"),
-    fixed(),
+    fixed(), z(1),
+    color(180, 220, 210),
   ]);
 
   const body = add([
     text(pages[0], { size: 20, width: width() - 120 }),
     pos(center().x, 190),
     anchor("top"),
-    fixed(),
+    fixed(), z(1),
+    color(210, 235, 225),
   ]);
 
   add([
-    text("▶ SPACE to continue", { size: 14 }),
+    text("▶ ESPACE pour continuer", { size: 14 }),
     pos(center().x, height() - 60),
     anchor("center"),
-    fixed(),
+    fixed(), z(1),
+    color(150, 190, 180),
   ]);
 
   onKeyPress("space", () => {
     i++;
     if (i >= pages.length) {
+      saveEverCompleted();
+      gameState.everCompleted = true;
       fadeOutThen("end", 0.6);
     } else {
       body.text = pages[i];
@@ -3009,7 +3069,7 @@ scene("outro", () => {
 scene("end", () => {
   playMusic("menuMusic", 0.3);
 
-  // Background image
+  // Background image (has FIN + Merci d'avoir joué ! baked in)
   add([
     sprite("endBg", { width: width(), height: height() }),
     pos(0, 0),
@@ -3023,99 +3083,87 @@ scene("end", () => {
   const minutes = Math.floor(totalTime / 60);
   const seconds = totalTime % 60;
 
+  // Stats panel — positioned below the baked-in title, above buttons
+  const panelCenterY = height() * 0.62;
+  const panelH = 120;
   add([
-    text("THE END — Thank you for playing!", { size: 36, font: "dungeon" }),
-    pos(center().x, center().y - 120),
-    anchor("center"),
-    fixed(), z(10),
+    rect(width() * 0.5, panelH, { radius: 8 }),
+    pos(center().x, panelCenterY),
+    anchor("center"), fixed(), z(0),
+    color(10, 20, 18), opacity(0.5),
   ]);
 
   add([
-    text(`Items collected: ${gameState.totalCollected}`, { size: 24 }),
-    pos(center().x, center().y - 90),
-    anchor("center"), fixed(), color(80, 220, 255),
+    text(`Objets collectés : ${gameState.totalCollected}`, { size: 18 }),
+    pos(center().x, panelCenterY - 42),
+    anchor("center"), fixed(), z(1),
+    color(160, 220, 200),
   ]);
   add([
-    text(`  Cave: ${gameState.level1Flies} flies   Forest: ${gameState.level2Mushrooms} mushrooms   Swamp: ${gameState.level3Flies} flies`, { size: 14 }),
-    pos(center().x, center().y - 66),
-    anchor("center"), fixed(), color(150, 200, 230),
+    text(`Grotte : ${gameState.level1Flies}   Forêt : ${gameState.level2Mushrooms}   Marais : ${gameState.level3Flies}`, { size: 12 }),
+    pos(center().x, panelCenterY - 22),
+    anchor("center"), fixed(), z(1),
+    color(120, 180, 165),
   ]);
-
   add([
-    text(
-      `Total time: ${minutes}:${seconds.toString().padStart(2, "0")}`,
-      { size: 24 }
-    ),
-    pos(center().x, center().y - 30),
-    anchor("center"),
-    fixed(),
+    text(`Temps : ${minutes}:${seconds.toString().padStart(2, "0")}`, { size: 18 }),
+    pos(center().x, panelCenterY + 2),
+    anchor("center"), fixed(), z(1),
+    color(160, 220, 200),
   ]);
-
   add([
-    text(`Levels completed: ${gameState.levelsCompleted} / 3`, { size: 24 }),
-    pos(center().x, center().y + 10),
-    anchor("center"),
-    fixed(),
+    text(`Niveaux : ${gameState.levelsCompleted} / 3`, { size: 16 }),
+    pos(center().x, panelCenterY + 24),
+    anchor("center"), fixed(), z(1),
+    color(140, 190, 175),
   ]);
-
   add([
-    text(`Deaths: ${gameState.deaths}`, { size: 18 }),
-    pos(center().x, center().y + 40),
-    anchor("center"), fixed(), color(255, 120, 100),
+    text(`Morts : ${gameState.deaths}`, { size: 16 }),
+    pos(center().x, panelCenterY + 44),
+    anchor("center"), fixed(), z(1),
+    color(190, 140, 130),
   ]);
 
-  // REPLAY
+  // --- Buttons ---
+  const btnY = height() - 55;
+
   const replayBtn = add([
-    rect(160, 40),
-    pos(center().x - 120, center().y + 160),
-    area(),
-    color(70, 110, 95),
-    anchor("center"),
-    fixed(),
+    rect(150, 36, { radius: 6 }),
+    pos(center().x - 120, btnY),
+    area(), anchor("center"), fixed(), z(1),
+    color(45, 80, 65), opacity(0.8),
   ]);
-
   add([
-    text("REPLAY", { size: 16 }),
-    pos(center().x - 120, center().y + 160),
-    anchor("center"),
-    color(220, 230, 220),
-    fixed(),
+    text("REJOUER", { size: 15 }),
+    pos(center().x - 120, btnY),
+    anchor("center"), fixed(), z(2),
+    color(190, 225, 210),
   ]);
 
-  // CREDITS
   const creditsBtn = add([
-    rect(160, 40),
-    pos(center().x, center().y + 160),
-    area(),
-    color(60, 90, 110),
-    anchor("center"),
-    fixed(),
+    rect(150, 36, { radius: 6 }),
+    pos(center().x, btnY),
+    area(), anchor("center"), fixed(), z(1),
+    color(40, 65, 80), opacity(0.8),
   ]);
-
   add([
-    text("CREDITS", { size: 16 }),
-    pos(center().x, center().y + 160),
-    anchor("center"),
-    color(220, 230, 220),
-    fixed(),
+    text("CRÉDITS", { size: 15 }),
+    pos(center().x, btnY),
+    anchor("center"), fixed(), z(2),
+    color(190, 215, 225),
   ]);
 
-  // MENU
   const menuBtn = add([
-    rect(160, 40),
-    pos(center().x + 120, center().y + 160),
-    area(),
-    color(95, 80, 70),
-    anchor("center"),
-    fixed(),
+    rect(150, 36, { radius: 6 }),
+    pos(center().x + 120, btnY),
+    area(), anchor("center"), fixed(), z(1),
+    color(65, 55, 50), opacity(0.8),
   ]);
-
   add([
-    text("MENU", { size: 16 }),
-    pos(center().x + 120, center().y + 160),
-    anchor("center"),
-    color(220, 230, 220),
-    fixed(),
+    text("MENU", { size: 15 }),
+    pos(center().x + 120, btnY),
+    anchor("center"), fixed(), z(2),
+    color(210, 200, 190),
   ]);
 
   replayBtn.onClick(() => {
