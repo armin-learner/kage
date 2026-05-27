@@ -2,64 +2,64 @@
 
 ## 1. Description du projet
 
-**KAGE** est un jeu de plateforme narratif en 2D developpe en JavaScript avec la librairie [Kaplay.js](https://kaplayjs.com/).
+**KAGE** est un jeu de plateforme narratif en 2D développé en JavaScript avec la librairie [Kaplay.js](https://kaplayjs.com/).
 
-En japonais, *kage* (影 ou 陰) signifie "ombre", "silhouette" ou "obscurite".
-Le joueur incarne KAGE, une creature recluse ayant vecu toute son existence dans une grotte souterraine.
-A la suite d'une catastrophe naturelle (tremblements de terre et inondation), son terrier est detruit. Contraint de quitter son refuge, KAGE part explorer un monde inconnu a la recherche d'un nouvel endroit ou s'installer.
+En japonais, *kage* (影 ou 陰) signifie "ombre", "silhouette" ou "obscurité".
+Le joueur incarne KAGE, une créature recluse ayant vécu toute son existence dans une grotte souterraine.
+À la suite d'une catastrophe naturelle (tremblements de terre et inondation), son terrier est détruit. Contraint de quitter son refuge, KAGE part explorer un monde inconnu à la recherche d'un nouvel endroit où s'installer.
 
-Le jeu repose sur une progression lineaire en trois niveaux, chacun introduisant une nouvelle capacite qui permet au joueur de s'adapter a son environnement :
+Le jeu repose sur une progression linéaire en trois niveaux, chacun introduisant une nouvelle capacité qui permet au joueur de s'adapter à son environnement :
 
-- **Niveau 1 — L'Echo des Profondeurs (Caverne)**
-  Incarner la chauve-souris pour voler a travers une caverne souterraine, utiliser l'echolocalisation (`E`) pour esquiver stalactites, stalagmites et eboulements.
-- **Niveau 2 — Les Sentiers Enracines (Foret)**
-  Incarner le scarabee pour charger et briser des obstacles (`SHIFT`), bondir et planer a travers une foret ancestrale.
-- **Niveau 3 — Le Marecage Oublie (Marais)**
+- **Niveau 1 — L'Écho des Profondeurs (Caverne)**
+  Incarner la chauve-souris pour voler à travers une caverne souterraine, utiliser l'écholocalisation (`E`) pour esquiver stalactites, stalagmites et éboulements.
+- **Niveau 2 — Les Sentiers Enracinés (Forêt)**
+  Incarner le scarabée pour charger et briser des obstacles (`SHIFT`), bondir et planer à travers une forêt ancestrale.
+- **Niveau 3 — Le Marécage Oublié (Marais)**
   Incarner la grenouille pour charger ses sauts (`C`) et traverser des eaux sombres et des environnements instables.
 
-Chaque niveau est introduit par un PNJ qui explique narrativement et mecaniquement la nouvelle capacite acquise.
+Chaque niveau est introduit par un PNJ qui explique narrativement et mécaniquement la nouvelle capacité acquise.
 
-Le jeu est encadre par :
-- une cinematique d'introduction presentant le contexte et l'histoire,
-- une cinematique de fin concluant le voyage de KAGE,
-- un ecran de fin affichant les statistiques de jeu (temps, objets collectes, morts, progression).
+Le jeu est encadré par :
+- une cinématique d'introduction présentant le contexte et l'histoire,
+- une cinématique de fin concluant le voyage de KAGE,
+- un écran de fin affichant les statistiques de jeu (temps, objets collectés, morts, progression).
 
 ---
 
 ## 2. Captures du projet
 
 ![Menu principal](menu.png)
-![Niveau 1 — L'Echo des Profondeurs](lvl1.png)
-![Niveau 2 — Les Sentiers Enracines](lvl2.png)
-![Niveau 3 — Le Marecage Oublie](lvl3.png)
-![Ecran de fin](end.png)
+![Niveau 1 — L'Écho des Profondeurs](lvl1.png)
+![Niveau 2 — Les Sentiers Enracinés](lvl2.png)
+![Niveau 3 — Le Marécage Oublié](lvl3.png)
+![Écran de fin](end.png)
 
 ---
 
-## 3. Procedure d'installation et de lancement
+## 3. Procédure d'installation et de lancement
 
-Le projet n'etant pas heberge en ligne, il doit etre lance localement.
+Le projet n'étant pas hébergé en ligne, il doit être lancé localement.
 
-### Pre-requis
+### Pré-requis
 
 - Un navigateur web moderne (Chrome, Firefox, Edge)
 - Un serveur local (ex. **Live Server** dans VS Code)
 
 ### Lancement
 
-1. Cloner ou telecharger le depot GitHub.
+1. Cloner ou télécharger le dépôt GitHub.
 2. Ouvrir le dossier racine du projet dans Visual Studio Code.
-3. S'assurer que le fichier `index.html` se trouve a la racine.
+3. S'assurer que le fichier `index.html` se trouve à la racine.
 4. Lancer un serveur local (par exemple via l'extension Live Server).
 5. Le jeu s'ouvre dans le navigateur.
 
 ---
 
-## 4. Librairies, modules et scripts utilises
+## 4. Librairies, modules et scripts utilisés
 
-| Technologie | Role |
+| Technologie | Rôle |
 |---|---|
-| **[Kaplay.js](https://kaplayjs.com/)** (v3001.0.19) | Librairie JavaScript pour le developpement de jeux 2D (scenes, collisions, camera, inputs, UI) |
+| **[Kaplay.js](https://kaplayjs.com/)** (v3001.0.19) | Librairie JavaScript pour le développement de jeux 2D (scènes, collisions, caméra, inputs, UI) |
 | **JavaScript (ES modules)** | Langage principal du projet |
 | **HTML5 / Canvas** | Support d'affichage du jeu |
 
@@ -67,7 +67,7 @@ Aucune autre librairie externe n'est requise pour le fonctionnement du projet.
 
 ---
 
-## 5. Ressources, licences et credits
+## 5. Ressources, licences et crédits
 
 ### Assets visuels
 
@@ -75,7 +75,7 @@ Aucune autre librairie externe n'est requise pour le fonctionnement du projet.
 
 | Asset | Auteur | Source | Utilisation |
 |---|---|---|---|
-| Swamp Kingdom — Platformer Tileset | the14collective | [itch.io](https://14collective.itch.io/swamp-kingdom-platfomer-tileset) | Niveaux 2 et 3 (decors, plateformes, objets) |
+| Swamp Kingdom — Platformer Tileset | the14collective | [itch.io](https://14collective.itch.io/swamp-kingdom-platfomer-tileset) | Niveaux 2 et 3 (décors, plateformes, objets) |
 | Bosses — Frogger | Admurin | [itch.io](https://admurin.itch.io/bosses-frogger) | Niveau 3 (PNJ grenouille, transformation grenouille) |
 
 #### Backgrounds
@@ -83,10 +83,10 @@ Aucune autre librairie externe n'est requise pour le fonctionnement du projet.
 | Asset | Auteur | Source | Utilisation |
 |---|---|---|---|
 | StoneMoon | Forest Elfs | [itch.io](https://forest-elfs.itch.io/stonemoon) | Background du menu principal |
-| ForestMoon | Forest Elfs | [itch.io](https://forest-elfs.itch.io/forestmoon) | Background de l'ecran de fin |
-| Crystal Cave Pixel Art Backgrounds | CraftPix | [craftpix.net](https://craftpix.net/freebies/free-crystal-cave-pixel-art-backgrounds/?num=2&count=28&sq=cavern&pos=1) | Niveau 1 (parallaxe caverne) |
-| Nature Backgrounds Pixel Art | CraftPix | [craftpix.net](https://craftpix.net/freebies/free-nature-backgrounds-pixel-art/) | Decors nature |
-| Forest and Trees Pixel Backgrounds | CraftPix | [craftpix.net](https://craftpix.net/freebies/forest-and-trees-free-pixel-backgrounds/) | Niveau 2 (foret) |
+| ForestMoon | Forest Elfs | [itch.io](https://forest-elfs.itch.io/forestmoon) | Background de l'écran de fin |
+| Crystal Cave Pixel Art Backgrounds | CraftPix | [craftpix.net](https://craftpix.net/freebies/free-crystal-cave-pixel-art-backgrounds/?num=2&amp;count=28&amp;sq=cavern&amp;pos=1) | Niveau 1 (parallaxe caverne) |
+| Nature Backgrounds Pixel Art | CraftPix | [craftpix.net](https://craftpix.net/freebies/free-nature-backgrounds-pixel-art/) | Décors nature |
+| Forest and Trees Pixel Backgrounds | CraftPix | [craftpix.net](https://craftpix.net/freebies/forest-and-trees-free-pixel-backgrounds/) | Niveau 2 (forêt) |
 | Underwater World Pixel Art Backgrounds | CraftPix | [craftpix.net](https://craftpix.net/freebies/free-underwater-world-pixel-art-backgrounds/) | Niveau 3 (marais/eau) |
 
 > Licence CraftPix : [craftpix.net/file-licenses](https://craftpix.net/file-licenses/)
@@ -101,21 +101,21 @@ Aucune autre librairie externe n'est requise pour le fonctionnement du projet.
 
 | Piste | Auteur | Source | Utilisation |
 |---|---|---|---|
-| Cave (musique niveau 1) | Spencer Y.K. | [Pixabay](https://pixabay.com/users/spencer_yk-36670691/) | Niveau 1 — L'Echo des Profondeurs |
-| Little Slime's Adventure (musique niveau 2) | Spencer Y.K. | [Pixabay](https://pixabay.com/music/video-games-little-slimex27s-adventure-151007/) | Niveau 2 — Les Sentiers Enracines |
-| Lily Paddling Down the Stream (musique niveau 3) | Fablefly Music | [itch.io](https://fablefly-music.itch.io/lily-paddling-down-the-stream) | Niveau 3 — Le Marecage Oublie |
-| Deep in the Dell (musique menu / fin) | Geoff Harvey | [Pixabay](https://pixabay.com/fr/users/geoffharvey-9096471/) | Menu principal et ecran de fin |
+| Cave (musique niveau 1) | Spencer Y.K. | [Pixabay](https://pixabay.com/users/spencer_yk-36670691/) | Niveau 1 — L'Écho des Profondeurs |
+| Little Slime's Adventure (musique niveau 2) | Spencer Y.K. | [Pixabay](https://pixabay.com/music/video-games-little-slimex27s-adventure-151007/) | Niveau 2 — Les Sentiers Enracinés |
+| Lily Paddling Down the Stream (musique niveau 3) | Fablefly Music | [itch.io](https://fablefly-music.itch.io/lily-paddling-down-the-stream) | Niveau 3 — Le Marécage Oublié |
+| Deep in the Dell (musique menu / fin) | Geoff Harvey | [Pixabay](https://pixabay.com/fr/users/geoffharvey-9096471/) | Menu principal et écran de fin |
 
 ### Effets sonores
 
 | Son | Auteur | Source | Utilisation |
 |---|---|---|---|
-| Cave Droplets | Pixabay (non credite) | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-inside-a-cave-effect-240264/) | Niveau 1 — gouttes d'eau ambiantes |
+| Cave Droplets | Pixabay (non crédité) | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-inside-a-cave-effect-240264/) | Niveau 1 — gouttes d'eau ambiantes |
 | Earth Rumble | freesound_community | [Pixabay](https://pixabay.com/users/freesound_community-46691455/) | Introduction — tremblement de terre |
 | Power Up Sparkle | floraphonic | [Pixabay](https://pixabay.com/fr/users/floraphonic-38928062/) | Effet de transformation |
 | Sound Effects Pack | Pixabay | [Pixabay — Video Games SFX Collection](https://pixabay.com/collections/video-games-sfx-27925379/) | Divers effets sonores |
 
-### Packs complementaires (references / inspiration)
+### Packs complémentaires (références / inspiration)
 
 | Pack | Auteur | Source |
 |---|---|---|
@@ -127,63 +127,72 @@ Aucune autre librairie externe n'est requise pour le fonctionnement du projet.
 
 ### Code
 
-Le code du projet est original, a l'exception de :
-- structures standards liees a Kaplay.js,
+Le code du projet est original, à l'exception de :
+- structures standards liées à Kaplay.js,
 - principes courants de game design (puzzles, plateformes, collisions).
 
-Les assets ont ete reorganises, decoupes et integres pour correspondre aux besoins visuels et ludiques du projet. Toutes les licences des packs autorisant l'usage dans des projets gratuits et commerciaux, la modification, mais interdisant la revente ou redistribution des assets seuls.
+Les assets ont été réorganisés, découpés et intégrés pour correspondre aux besoins visuels et ludiques du projet. Toutes les licences des packs autorisent l'usage dans des projets gratuits et commerciaux, la modification, mais interdisent la revente ou redistribution des assets seuls.
 
 ---
 
-## 6. Concept abandonne : La Taupe (Niveau 1)
+## 6. Concept abandonné : La Taupe (Niveau 1)
 
-Le concept initial du Niveau 1 reposait sur un personnage de **Taupe** qui enseignait au joueur a **creuser la terre** pour naviguer dans un environnement souterrain.
+Le concept initial du Niveau 1 reposait sur un personnage de **Taupe** qui enseignait au joueur à **creuser la terre** pour naviguer dans un environnement souterrain.
 
-### Premiere iteration — Grille de blocs (style Dome Keeper)
+### Première itération — Grille de blocs (style Dome Keeper)
 
-L'idee etait de creer une caverne entierement remplie de terre, composee d'une grille de blocs individuels que le joueur pouvait creuser un par un. Des pierres indestructibles parsemaient la grille pour forcer le joueur a trouver un chemin alternatif vers la sortie (en haut a droite).
+L'idée était de créer une caverne entièrement remplie de terre, composée d'une grille de blocs individuels que le joueur pouvait creuser un par un. Des pierres indestructibles parsemaient la grille pour forcer le joueur à trouver un chemin alternatif vers la sortie (en haut à droite).
 
-**Probleme rencontre :** La grille necessitait environ **745 blocs de terre**, chacun possedant son propre composant de collision (`area()` et `body()`). Cette quantite massive d'entites physiques a provoque des **chutes de framerate severes** et une **consommation memoire excessive**, rendant le jeu injouable (confirme par le profiling Firefox). Kaplay.js n'est pas optimise pour gerer autant de corps physiques simultanement.
+**Problème rencontré :** La grille nécessitait environ **745 blocs de terre**, chacun possédant son propre composant de collision (`area()` et `body()`). Cette quantité massive d'entités physiques a provoqué des **chutes de framerate sévères** et une **consommation mémoire excessive**, rendant le jeu injouable (confirmé par le profiling Firefox). Kaplay.js n'est pas optimisé pour gérer autant de corps physiques simultanément.
 
-### Deuxieme iteration — Defilement horizontal (style Kingdom: Two Crowns)
+### Deuxième itération — Défilement horizontal (style Kingdom: Two Crowns)
 
-Pour resoudre le probleme de performance, le niveau a ete redesigne en **defilement horizontal** avec seulement ~80 blocs de terre. Le joueur avancait de gauche a droite en creusant des murs de terre, avec des piliers de pierre forcant des detours.
+Pour résoudre le problème de performance, le niveau a été redesigné en **défilement horizontal** avec seulement ~80 blocs de terre. Le joueur avançait de gauche à droite en creusant des murs de terre, avec des piliers de pierre forçant des détours.
 
-**Probleme rencontre :** Le gameplay resultant etait **trop lineaire et monotone** — le joueur n'avait qu'a avancer en ligne droite et creuser les murs sur son passage, sans reelle reflexion ni variete.
+**Problème rencontré :** Le gameplay résultant était **trop linéaire et monotone** — le joueur n'avait qu'à avancer en ligne droite et creuser les murs sur son passage, sans réelle réflexion ni variété.
 
 ### Solution finale — La Chauve-souris (vol)
 
-Face a ces limitations, le concept de la Taupe a ete **entierement abandonne** au profit d'une **Chauve-souris** enseignant le vol. Ce changement a resolu les deux problemes :
-- **Performance :** aucun bloc de terre a gerer, collision manuelle legere.
-- **Gameplay :** le vol de type Flappy Bird combine a des **tunnels rocheux** traversables a pied offre une variete et un rythme bien superieurs, tout en restant accessible aux joueurs de 8-12 ans.
+Face à ces limitations, le concept de la Taupe a été **entièrement abandonné** au profit d'une **Chauve-souris** enseignant le vol. Ce changement a résolu les deux problèmes :
+- **Performance :** aucun bloc de terre à gérer, collision manuelle légère.
+- **Gameplay :** le vol de type Flappy Bird combiné à des **tunnels rocheux** traversables à pied offre une variété et un rythme bien supérieurs, tout en restant accessible aux joueurs de 8-12 ans.
 
 ---
 
-## 7. Usage des modeles de langage (LLM)
+## 7. Usage des modèles de langage (LLM)
 
-Des modeles de langage ont ete utilises dans le cadre du developpement du projet.
+Des modèles de langage ont été utilisés dans le cadre du développement du projet.
 
-### Modeles utilises
+### Modèles utilisés
 
 - **Copilot** (Microsoft)
 - **Claude** (Anthropic)
 
 ### Usages principaux
 
-- Aide a la structuration du gameplay (progression par capacites)
-- Assistance au debogage JavaScript / Kaplay.js
+- Aide à la structuration du gameplay (progression par capacités)
+- Assistance au débogage JavaScript / Kaplay.js
 - Clarification de concepts techniques
 
 ### Nature de l'assistance
 
-Les modeles de langage n'ont pas produit de code final autonome, mais ont servi :
-- de support a la reflexion,
-- d'assistant pedagogique.
+Les modèles de langage n'ont pas produit de code final autonome, mais ont servi :
+- de support à la réflexion,
+- d'assistant pédagogique.
 
-L'ensemble des choix finaux (code, design, integration) releve du developpeur.
+L'ensemble des choix finaux (code, design, intégration) relève du développeur.
 
 ---
 
-## 8. Contexte de developpement
+## 8. Contexte de développement
 
-Ce projet a ete developpe dans le cadre d'un enseignement universitaire a l'**Universite de Lausanne (UNIL)**, "Developpement de jeu video 2D" donne par **Loic Catani** dans le domaine des sciences du langage et des humanites numeriques.
+Ce projet a été développé dans le cadre d'un enseignement universitaire à l'**Université de Lausanne (UNIL)**, "Développement de jeu vidéo 2D" donné par **Loïc Catani** dans le domaine des sciences du langage et des humanités numériques.
+
+---
+
+## 9. Corrections et ajustements suite aux retours
+
+Suite aux retours de test, plusieurs ajustements ont été apportés au jeu :
+
+- **Touche `R` — Recommencer :** ajout d'un raccourci clavier `R` permettant de recommencer rapidement le niveau ou le menu en cours, sans passer par le menu de pause.
+- **Corrections de hitbox :** plusieurs hitbox de plateformes et d'obstacles ont été réajustées (épaisseurs réduites, positions corrigées) pour éviter les blocages invisibles et les collisions imprévues.

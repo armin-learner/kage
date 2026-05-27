@@ -33,7 +33,7 @@ window.addEventListener("keydown", (e) => {
 loadSprite("menuBg", "assets/Menu/BackGround.png");
 loadSprite("endBg", "assets/end/BackGround.png");
 loadSprite("outroBg", "assets/end/BackGround2.png");
-loadSound("menuMusic", "assets/Menu/chill.mp3");
+loadSound("menuMusic", "assets/Menu/deep_in_the_dell.mp3");
 loadSound("l1Music", "assets/level1/Music/cave.mp3");
 loadSound("l1Dropplets", "assets/level1/Sound/dropplets.mp3");
 loadSound("l2Music", "assets/level2/Music/chill.mp3");
@@ -317,13 +317,77 @@ function togglePause() {
 onKeyPress("escape", () => togglePause());
 
 let currentMusic = null;
+
+// --- Start menu music as soon as possible.
+// Browsers block autoplay until the user interacts with the page, so we:
+//  1) Try immediately (works if the tab already had an interaction).
+//  2) On the very first pointer/key/touch event anywhere on the page, resume
+//     the AudioContext and (re)start the menu music. We don't trust play()'s
+//     return value because Kaplay returns a handle even when the AudioContext
+//     is suspended — instead we wait until the AudioContext is "running".
+let _bootMusicReallyPlaying = false;
+function _getAudioCtx() {
+  // Kaplay exposes the internal audio context through different paths across
+  // versions; try all of them defensively.
+  try {
+    if (typeof audioCtx !== "undefined" && audioCtx) return audioCtx;
+  } catch(e) {}
+  try {
+    const k = (typeof window !== "undefined") ? (window._k || window.k) : null;
+    if (k && k.audio && k.audio.ctx) return k.audio.ctx;
+  } catch(e) {}
+  return null;
+}
+function _bootStartMenuMusic() {
+  if (_bootMusicReallyPlaying) return;
+  const ctx = _getAudioCtx();
+  const tryPlay = () => {
+    try {
+      if (currentMusic) { try { currentMusic.stop(); } catch(e) {} currentMusic = null; }
+      currentMusic = play("menuMusic", { loop: true, volume: 0.3 });
+      currentMusic._kageTrack = "menuMusic";
+      _bootMusicReallyPlaying = true;
+    } catch(e) { /* retry on next interaction */ }
+  };
+  if (ctx && ctx.state === "suspended" && typeof ctx.resume === "function") {
+    ctx.resume().then(tryPlay).catch(tryPlay);
+  } else {
+    tryPlay();
+  }
+}
+// Attempt immediately (will usually be blocked on first page load).
+_bootStartMenuMusic();
+// Retry on EVERY user interaction until the AudioContext is actually running.
+const _bootHandler = () => {
+  _bootStartMenuMusic();
+  const ctx = _getAudioCtx();
+  if (_bootMusicReallyPlaying && (!ctx || ctx.state === "running")) {
+    window.removeEventListener("pointerdown", _bootHandler);
+    window.removeEventListener("mousedown", _bootHandler);
+    window.removeEventListener("keydown", _bootHandler);
+    window.removeEventListener("touchstart", _bootHandler);
+  }
+};
+window.addEventListener("pointerdown", _bootHandler);
+window.addEventListener("mousedown", _bootHandler);
+window.addEventListener("keydown", _bootHandler);
+window.addEventListener("touchstart", _bootHandler);
+
 let activeSFX = [];
 function playMusic(soundName, vol) {
-  if (currentMusic) { currentMusic.stop(); currentMusic = null; }
-  // Stop all lingering SFX from previous scene
+  // If the same track is already playing, don't restart it (keeps menu music
+  // seamless between page-load autoplay, menu scene, and intro scene).
+  if (currentMusic && currentMusic._kageTrack === soundName && !currentMusic.paused) {
+    currentMusic.volume = (vol || 0.3) * gameState.volume;
+    activeSFX.forEach(s => { try { s.stop(); } catch(e) {} });
+    activeSFX = [];
+    return;
+  }
+  if (currentMusic) { try { currentMusic.stop(); } catch(e) {} currentMusic = null; }
   activeSFX.forEach(s => { try { s.stop(); } catch(e) {} });
   activeSFX = [];
   currentMusic = play(soundName, { loop: true, volume: (vol || 0.3) * gameState.volume });
+  currentMusic._kageTrack = soundName;
 }
 function stopMusic() {
   if (currentMusic) { currentMusic.stop(); currentMusic = null; }
@@ -420,6 +484,7 @@ function toggleCommandsMenu() {
   }
   
   cmdText += "GAUCHE/DROITE : Se deplacer\n";
+  cmdText += "R : Recommencer le niveau\n";
   cmdText += "\nF : Plein ecran\n";
   cmdText += "T : Fermer ce menu";
 
@@ -692,7 +757,7 @@ scene("menu", () => {
     updateMusicVolume();
   });
 
-  // Menu music — start on first user interaction (browser autoplay policy)
+  // Menu music — try immediately, fallback on first user interaction (browser autoplay policy)
   let menuMusicStarted = false;
   function ensureMenuMusic() {
     if (!menuMusicStarted) {
@@ -700,11 +765,15 @@ scene("menu", () => {
       playMusic("menuMusic", 0.3);
     }
   }
+  // Attempt autoplay immediately
+  try { ensureMenuMusic(); } catch(e) { menuMusicStarted = false; }
+  // Fallback: start on first interaction if autoplay was blocked
   onClick(() => ensureMenuMusic());
   onKeyPress(() => ensureMenuMusic());
+  onMouseMove(() => ensureMenuMusic());
 
   playBtn.onClick(() => {
-    stopMusic();
+    // Music continues into intro — earthquake will cut it
     gameState.startTime = Date.now();
     gameState.levelsCompleted = 0;
     fadeOutThen("intro", 0.35);
@@ -720,7 +789,7 @@ scene("menu", () => {
   creditsBtn.onClick(() => fadeOutThen("credits", 0.35));
 
   onKeyPress("enter", () => {
-    stopMusic();
+    // Music continues into intro — earthquake will cut it
     gameState.startTime = Date.now();
     gameState.levelsCompleted = 0;
     fadeOutThen("intro", 0.35);
@@ -801,56 +870,53 @@ scene("levelSelect", () => {
 });
 
 scene("credits", () => {
+  // Background image (BackGround2)
   add([
-    rect(width(), height()),
-    color(20, 20, 30),
-    pos(0, 0),
-    fixed(),
+    sprite("outroBg", { width: width(), height: height() }),
+    pos(0, 0), fixed(), z(-1),
   ]);
+  // Dark overlay for text readability
+  add([rect(width(), height()), color(0, 0, 0), opacity(0.55), pos(0, 0), fixed(), z(0)]);
 
   add([
     text("CRÉDITS", { size: 32 }),
     pos(center().x, center().y - 140),
     anchor("center"),
-    fixed(),
+    fixed(), z(1),
+    color(180, 220, 210),
   ]);
 
-add([
-  text(
-    "Développé avec Kaplay.js\n\n" +
-
-    "Idées & Programmation : Armin\n\n" +
-
-    "Game Design : Admurin - karsiori - MonoPixelArt - the14collective - zneeke\n\n" +
-
-    "Musique & Sons : DRAGON-STUDIO - Fablefly Music - Spencer_YK\n\n" +
-
-    "Beta Testing : Adri - Micka - Nono\n\n" +
-
-    "Merci d'avoir joué !",
-    { size: 18 }
-  ),
-  pos(center()),
-  anchor("center"),
-  fixed(),
-]);
-
+  add([
+    text(
+      "Développé avec Kaplay.js\n\n" +
+      "Idées & Programmation : Armin\n\n" +
+      "Game Design : Admurin - Armin - karsiori - MonoPixelArt - the14collective - zneeke\n\n" +
+      "Musique & Sons : DRAGON-STUDIO - Fablefly Music - Spencer_YK\n\n" +
+      "Beta Testing : Adri - Micka - Nono\n\n" +
+      "Merci d'avoir joué !",
+      { size: 18 }
+    ),
+    pos(center()),
+    anchor("center"),
+    fixed(), z(1),
+    color(210, 235, 225),
+  ]);
 
   const backBtn = add([
-    rect(140, 40),
-    pos(center().x, center().y + 120),
+    rect(140, 40, { radius: 6 }),
+    pos(center().x, center().y + 140),
     area(),
-    color(120, 120, 120),
+    color(45, 80, 65), opacity(0.8),
     anchor("center"),
-    fixed(),
+    fixed(), z(1),
   ]);
 
   add([
     text("RETOUR", { size: 16 }),
-    pos(center().x, center().y + 120),
+    pos(center().x, center().y + 140),
     anchor("center"),
-    color(255, 255, 255),
-    fixed(),
+    color(190, 225, 210),
+    fixed(), z(2),
   ]);
 
   backBtn.onClick(() => fadeOutThen("menu", 0.35));
@@ -941,6 +1007,8 @@ scene("intro", () => {
 
   // Earthquake screen-shake on the background image
   function startEarthquake() {
+    // Cut menu music abruptly when earthquake hits
+    stopMusic();
     rumbleHandle = play("earthRumble", { volume: 0.6, loop: false });
     let elapsed = 0;
     const duration = 4;
@@ -1686,6 +1754,13 @@ scene("level1", () => {
     sonarBar.opacity = pct < 1 ? 0.4 : 0.9;
   });
 
+  // Reset level key (R)
+  onKeyPress("r", () => {
+    if (gameState.paused) return;
+    stopMusic();
+    go("level1");
+  });
+
   onKeyPress("tab", () => fadeOutThen("levelSelect", 0.35));
 
   fadeIn(0.4);
@@ -1784,18 +1859,38 @@ scene("level2", () => {
     return box;
   }
 
+  // Invisible barrier above pillars (prevents jumping over)
+  function addPillarBarrier(x, y, w) {
+    const barrier = add([
+      rect(w, y - 10), // from ceiling (y=10) to pillar top
+      pos(x, 10),
+      area(), body({ isStatic: true }),
+      opacity(DEBUG_HITBOX ? 0.15 : 0),
+      color(255, 0, 255),
+      z(DEBUG_HITBOX ? 110 : -5),
+      "pillarBarrier",
+    ]);
+    return barrier;
+  }
+
   // Pillar 1
-  addDashPillar(531.6,  231.6, 55.8, 72.6, 1);
+  const p1 = addDashPillar(531.6,  231.6, 55.8, 72.6, 1);
+  p1.barrier = addPillarBarrier(531.6, 231.6, 55.8);
   // Pillar 2
-  addDashPillar(1172.1, 200,   55.8, 72.6, 2);
+  const p2 = addDashPillar(1172.1, 200,   55.8, 72.6, 2);
+  p2.barrier = addPillarBarrier(1172.1, 200, 55.8);
   // Pillar 3
-  addDashPillar(1595.9, 295.4, 55.8, 72.6, 1);
+  const p3 = addDashPillar(1595.9, 295.4, 55.8, 72.6, 1);
+  p3.barrier = addPillarBarrier(1595.9, 295.4, 55.8);
   // Pillar 4
-  addDashPillar(1839,   295.4, 55.8, 72.6, 2);
+  const p4 = addDashPillar(1839,   295.4, 55.8, 72.6, 2);
+  p4.barrier = addPillarBarrier(1839, 295.4, 55.8);
   // Pillar 5
-  addDashPillar(2145.7, 185,   55.8, 72.6, 1);
+  const p5 = addDashPillar(2145.7, 185,   55.8, 72.6, 1);
+  p5.barrier = addPillarBarrier(2145.7, 185, 55.8);
   // Pillar 6
-  addDashPillar(2257.6, 148.7, 55.8, 72.6, 2);
+  const p6 = addDashPillar(2257.6, 148.7, 55.8, 72.6, 2);
+  p6.barrier = addPillarBarrier(2257.6, 148.7, 55.8);
 
   const GOBLIN_SCALE = 1.6;
   const player = add([
@@ -1957,6 +2052,7 @@ scene("level2", () => {
         "Mais attention : le dash ne fonctionne que si tu manges des champignons !",
         "Les champignons te donnent l'énergie nécessaire pour foncer.",
         "Casse les piliers de pierre et trouve la sortie !",
+        "Si tu es bloqué, appuie sur R pour recommencer le niveau.",
         "Rappel : appuie sur T pour revoir toutes les commandes."
       ],
       onDone: () => {
@@ -2091,8 +2187,9 @@ scene("level2", () => {
       if (flash.age > 0.15) destroy(flash);
     });
 
-    // Remove visual and hitbox
+    // Remove visual, barrier, and hitbox
     if (wall.visual && wall.visual.exists()) destroy(wall.visual);
+    if (wall.barrier && wall.barrier.exists()) destroy(wall.barrier);
     destroy(wall);
   });
 
@@ -2243,6 +2340,32 @@ scene("level2", () => {
     }
 
     hoverBar.width = 64 * (hoverFuel / MAX_HOVER);
+  });
+
+  // Reset level key (R) — prevents soft lock when out of dashes
+  onKeyPress("r", () => {
+    if (gameState.paused) return;
+    stopMusic();
+    go("level2");
+  });
+
+  // Soft-lock detection: if no mushrooms left and no dashes, show hint
+  let softLockTimer = 0;
+  onUpdate(() => {
+    if (gameState.paused) return;
+    softLockTimer -= dt();
+    if (softLockTimer > 0) return;
+    if (mushCount <= 0 && !player.charging) {
+      const breakablesExist = get("breakable").length > 0;
+      if (breakablesExist) {
+        const uncollected = get("collectMush").length;
+        const enemiesAlive = get("mushEnemy").filter(e => e.alive).length;
+        if (uncollected === 0 && enemiesAlive === 0) {
+          showTopMessage("Plus de dashes ! Appuie sur R pour recommencer le niveau.", 3, rgb(255, 120, 60));
+          softLockTimer = 8;
+        }
+      }
+    }
   });
 
   onKeyPress("tab", () => fadeOutThen("levelSelect", 0.35));
@@ -2505,10 +2628,10 @@ scene("level3", () => {
   addHitbox(0, 0, WORLD_W, 10);
 
   // --- LEFT SECTION ---
-  addHitbox(-10, 213, 116, 65);       // player spawn platform
-  addHitbox(106, 209, 227, 74);       // NPC frog platform
-  addHitbox(0.5, 352.1, 137, 65);     // bottom-left platform (empty chest)
-  addHitbox(0, 98, 195, 40);          // top-left ceiling platform
+  addHitbox(-10, 213, 116, 18);       // player spawn platform (thinner)
+  addHitbox(106, 209, 227, 18);       // NPC frog platform (thinner)
+  addHitbox(0.5, 352.1, 137, 18);     // bottom-left platform (thinner)
+  addHitbox(0, 98, 195, 14);          // top-left ceiling platform (thinner)
   // Removed small ledge (23.9, 323, 85, 37) that was blocking access to bottom-left platform
 
   // One-way platform (pass through from below, land on top)
@@ -2519,22 +2642,18 @@ scene("level3", () => {
       opacity(DEBUG_HITBOX ? 0.25 : 0),
       color(100, 200, 100),
       z(DEBUG_HITBOX ? 100 : -10),
-      "oneway",
+      "passThrough",
     ]);
-    plat.onBeforePhysicsResolve((col) => {
-      if (col.source.vel.y < 0) { col.preventResolution(); return; }
-      const playerBottom = col.source.pos.y + (col.source.height || 0);
-      if (playerBottom > plat.pos.y + 10) { col.preventResolution(); }
-    });
     return plat;
   }
 
   // --- CENTER SECTION ---
-  addHitbox(687, 292, 227, 74);       // center island
-  addHitbox(823.5, 211.2, 139, 25);   // mid floating platform
-  addHitbox(743.3, 118.4, 42.8, 14.5);   // solid platform (mid-left)
-  addHitbox(835, 83.9, 52.5, 14.5);      // solid platform + false empty chest
-  addHitbox(1085.9, 82.4, 61, 28);    // platform with true key chest
+  addHitbox(687, 292, 227, 18);       // center island (thinner)
+  addOneWayPlatform(823.5, 211.2, 139, 14); // branch — one-way, accessible by ladder
+  addOneWayPlatform(734.9, 119.1, 52.5, 14.5); // tree platform left — one-way
+  addOneWayPlatform(835, 83.8, 52.5, 14.5);    // tree platform right — one-way
+  // Zone (783.5, 34.7, 52, 257.2) intentionally clear — no hitbox so player can pass
+  addHitbox(1085.9, 82.4, 61, 14);    // platform with true key chest (thinner)
 
   // --- LADDER (tree trunk, full height) ---
   add([
@@ -2549,7 +2668,7 @@ scene("level3", () => {
 
   // --- RIGHT SECTION ---
   addHitbox(1549, 206, 84, 29);       // small floating platform right
-  addHitbox(757.5, 312.2, 137, 65);   // mid-right platform
+  addHitbox(757.5, 312.2, 137, 18);   // mid-right platform (thinner)
 
   // Slope platform (17.5 degrees rotation approximated with steps)
   for (let i = 0; i < 6; i++) {
@@ -2557,8 +2676,8 @@ scene("level3", () => {
     addHitbox(2004.5 + i * stepW, 367.9 - i * 7.2, stepW, 12);
   }
 
-  addHitbox(2120.7, 326, 279.3, 75);  // main right platform
-  addHitbox(1872.4, 349.6, 168.1, 51.4); // bridge right
+  addHitbox(2120.7, 326, 279.3, 18);  // main right platform (thinner)
+  addHitbox(1872.4, 349.6, 168.1, 18); // bridge right (thinner)
   const frog = add([
     sprite("frogNPC", { anim: "hop" }),
     pos(200, 209), area(), anchor("bot"), scale(3.5), "frog-npc", z(10),
@@ -2597,6 +2716,18 @@ scene("level3", () => {
     },
   ]);
   player.onUpdate(() => camUpdate(player.pos.x, player.pos.y));
+
+  // One-way platform physics: pass through from below, block from above.
+  // Also allow drop-down by holding Down/S.
+  player.onBeforePhysicsResolve((collision) => {
+    if (collision.target.is("passThrough")) {
+      const goingUp = (player.vel && player.vel.y < -5) || (typeof player.isJumping === "function" && player.isJumping());
+      const dropDown = isKeyDown("down") || isKeyDown("s");
+      if (goingUp || dropDown) {
+        collision.preventResolution();
+      }
+    }
+  });
 
   // --- LADDER CLIMBING ---
   let touchingLadder = false;
@@ -3007,6 +3138,13 @@ scene("level3", () => {
     }
   });
 
+  // Reset level key (R)
+  onKeyPress("r", () => {
+    if (gameState.paused) return;
+    stopMusic();
+    go("level3");
+  });
+
   onKeyPress("tab", () => fadeOutThen("levelSelect", 0.35));
   fadeIn(0.45);
 });
@@ -3124,18 +3262,19 @@ scene("end", () => {
     color(190, 140, 130),
   ]);
 
-  // --- Buttons ---
+  // --- Buttons (wider spacing to avoid overlap) ---
   const btnY = height() - 55;
+  const btnSpacing = 170;
 
   const replayBtn = add([
     rect(150, 36, { radius: 6 }),
-    pos(center().x - 120, btnY),
+    pos(center().x - btnSpacing, btnY),
     area(), anchor("center"), fixed(), z(1),
     color(45, 80, 65), opacity(0.8),
   ]);
   add([
     text("REJOUER", { size: 15 }),
-    pos(center().x - 120, btnY),
+    pos(center().x - btnSpacing, btnY),
     anchor("center"), fixed(), z(2),
     color(190, 225, 210),
   ]);
@@ -3155,13 +3294,13 @@ scene("end", () => {
 
   const menuBtn = add([
     rect(150, 36, { radius: 6 }),
-    pos(center().x + 120, btnY),
+    pos(center().x + btnSpacing, btnY),
     area(), anchor("center"), fixed(), z(1),
     color(65, 55, 50), opacity(0.8),
   ]);
   add([
     text("MENU", { size: 15 }),
-    pos(center().x + 120, btnY),
+    pos(center().x + btnSpacing, btnY),
     anchor("center"), fixed(), z(2),
     color(210, 200, 190),
   ]);
